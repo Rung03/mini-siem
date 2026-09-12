@@ -4,10 +4,17 @@
 
 | | |
 |---|---|
-| VM | Azure **Standard_B2as_v2** (2 vCPU / 8 GB) ที่ **Southeast Asia** |
+| VM | Azure **Standard_B2as_v2** (2 vCPU / 8 GB) ที่ **Korea Central** |
 | โดเมน | DuckDNS (ฟรี) เช่น `mysiem.duckdns.org` |
 | TLS | **Caddy** ขอและต่ออายุ Let's Encrypt อัตโนมัติ (ACME HTTP-01) |
-| ค่าใช้จ่าย | **$0.0944/ชม.** (~$69/เดือน ถ้าเปิดค้าง) — เดโม 3 วันราว **$6.80** สั่ง `az vm deallocate` ตอนไม่ใช้เพื่อหยุดค่า compute |
+| ค่าใช้จ่าย | **$0.0936/ชม.** (~$68/เดือน ถ้าเปิดค้าง) — เดโม 3 วันราว **$6.74** สั่ง `az vm deallocate` ตอนไม่ใช้เพื่อหยุดค่า compute |
+
+> **ทำไมเกาหลีไม่ใช่สิงคโปร์:** Southeast Asia จะดีกว่าเรื่อง latency จากไทย
+> (~30 ms เทียบกับ ~85 ms) แต่ subscription แบบ Azure for Students ถูกปฏิเสธ
+> ทุกขนาด 2 vCPU / 8 GB ที่นั่น (`NotAvailableForSubscription` ทั้ง B2ms,
+> B2s_v2, B2as_v2, D2s_v5, D2as_v5) ส่วน Korea Central อนุญาต
+> ถ้า subscription ของคุณเป็นแบบ pay-as-you-go ให้ใช้
+> `LOCATION=southeastasia ./scripts/provision-azure.sh` แทนจะได้ latency ที่ดีกว่า
 
 ---
 
