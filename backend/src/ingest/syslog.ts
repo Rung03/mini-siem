@@ -1,0 +1,131 @@
+import dgram from 'node:dgram';
+import net from 'node:net';
+import { config } from '../config.js';
+import { normalize } from '../normalize/index.js';
+import { batcher } from '../pipeline/batcher.js';
+import { recordDrop } from '../pipeline/writer.js';
+import { resolveByIp } from './collectors.js';
+
+/**
+ * Syslog listeners, UDP and TCP on 514.
+ *
+ * Network gear cannot present a credential, so the source address is the
+ * identity: each syslog collector row carries the CIDR its sender lives in.
+ * Anything from an address that matches no collector is counted and dropped —
+ * never filed under a guess, because filing a stranger's logs under a tenant
+ * would be worse than losing them.
+ */
+
+const MAX_MESSAGE_BYTES = 64 * 1024;
+
+/** ::ffff:203.0.113.5 → 203.0.113.5, so the CIDR match sees a v4 address. */
+function normalizeAddress(addr: string): string {
+  const m = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(addr);
+  return m ? m[1]! : addr;
+}
+
+async function handleLine(line: string, peerIp: string, transport: 'udp' | 'tcp') {
+  const raw = line.replace(/\0+$/, '').trim();
+  if (!raw) return;
+
+  const collector = await resolveByIp(peerIp);
+  if (!collector) {
+    await recordDrop(null, `syslog/${transport}`, 'no collector matches sender', peerIp, raw);
+    return;
+  }
+
+  const event = normalize(collector.sourceType, {
+    raw,
+    receivedAt: new Date(),
+    peerIp,
+  });
+
+  batcher.add(collector.tenantId, collector.collectorId, event);
+}
+
+export function startSyslogUdp(): dgram.Socket {
+  const socket = dgram.createSocket({ type: 'udp6', ipv6Only: false, reuseAddr: true });
+
+  socket.on('message', (msg, rinfo) => {
+    if (msg.length > MAX_MESSAGE_BYTES) return;
+    const peer = normalizeAddress(rinfo.address);
+    // One datagram is one message in UDP syslog.
+    void handleLine(msg.toString('utf8'), peer, 'udp').catch((err) =>
+      console.error('[syslog/udp] handler failed', err),
+    );
+  });
+
+  socket.on('error', (err) => console.error('[syslog/udp] socket error', err));
+
+  socket.bind(config.syslog.udpPort, () => {
+    console.log(`[syslog/udp] listening on :${config.syslog.udpPort}`);
+  });
+
+  return socket;
+}
+
+/**
+ * TCP syslog arrives as a stream, and there are two framings in the wild:
+ * RFC6587 octet counting ("87 <34>1 2026-..."), and plain LF-delimited lines.
+ * Sniff which one this sender uses and stay with it.
+ */
+export function startSyslogTcp(): net.Server {
+  const server = net.createServer((socket) => {
+    const peer = normalizeAddress(socket.remoteAddress ?? '');
+    let buffer = '';
+
+    socket.setEncoding('utf8');
+    socket.setTimeout(120_000, () => socket.destroy());
+
+    socket.on('data', (chunk: string) => {
+      buffer += chunk;
+
+      // Guard against a sender that never sends a delimiter.
+      if (buffer.length > MAX_MESSAGE_BYTES * 4) {
+        void recordDrop(null, 'syslog/tcp', 'unframed data exceeded buffer', peer, null);
+        buffer = '';
+        socket.destroy();
+        return;
+      }
+
+      for (;;) {
+        const counted = /^(\d{1,6}) /.exec(buffer);
+        if (counted) {
+          const length = Number(counted[1]);
+          const start = counted[0].length;
+          if (buffer.length < start + length) break; // wait for the rest
+          const message = buffer.slice(start, start + length);
+          buffer = buffer.slice(start + length);
+          void handleLine(message, peer, 'tcp').catch((err) =>
+            console.error('[syslog/tcp] handler failed', err),
+          );
+          continue;
+        }
+
+        const nl = buffer.indexOf('\n');
+        if (nl === -1) break;
+        const message = buffer.slice(0, nl);
+        buffer = buffer.slice(nl + 1);
+        void handleLine(message, peer, 'tcp').catch((err) =>
+          console.error('[syslog/tcp] handler failed', err),
+        );
+      }
+    });
+
+    socket.on('end', () => {
+      if (buffer.trim()) {
+        void handleLine(buffer, peer, 'tcp').catch(() => undefined);
+      }
+    });
+
+    socket.on('error', () => socket.destroy());
+  });
+
+  server.on('error', (err) => console.error('[syslog/tcp] server error', err));
+
+  server.listen(config.syslog.tcpPort, () => {
+    console.log(`[syslog/tcp] listening on :${config.syslog.tcpPort}`);
+  });
+
+  return server;
+}

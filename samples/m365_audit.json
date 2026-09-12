@@ -1,0 +1,22 @@
+[
+  {
+    "tenant": "demoB",
+    "source": "m365",
+    "event_type": "UserLoggedIn",
+    "user": "bob@demo.local",
+    "ip": "198.51.100.23",
+    "status": "Success",
+    "workload": "Exchange",
+    "@timestamp": "2025-08-20T10:05:00Z"
+  },
+  {
+    "CreationTime": "2025-08-20T10:06:00",
+    "Operation": "UserLoginFailed",
+    "ResultStatus": "Failed",
+    "UserId": "carol@demo.local",
+    "ClientIP": "203.0.113.55",
+    "LogonError": "InvalidUserNameOrPassword",
+    "Workload": "AzureActiveDirectory",
+    "RecordType": 15
+  }
+]

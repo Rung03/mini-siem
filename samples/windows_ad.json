@@ -1,0 +1,22 @@
+[
+  {
+    "tenant": "demoA",
+    "source": "ad",
+    "event_id": 4625,
+    "event_type": "LogonFailed",
+    "user": "demo\\eve",
+    "host": "DC01",
+    "ip": "203.0.113.77",
+    "logon_type": 3,
+    "@timestamp": "2025-08-20T11:11:11Z"
+  },
+  {
+    "EventID": 4624,
+    "TimeCreated": "2025-08-20T11:12:00Z",
+    "Computer": "DC01.demo.local",
+    "TargetUserName": "DEMO\\jsmith",
+    "IpAddress": "10.0.0.44",
+    "LogonType": 3,
+    "Channel": "Security"
+  }
+]

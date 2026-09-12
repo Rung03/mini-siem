@@ -1,0 +1,30 @@
+# Appliance overlay: same images, same code — only the wiring differs.
+#   docker compose -f docker-compose.yml -f docker-compose.appliance.yml up -d
+#
+# Everything is bound to the loopback interface so nothing but the syslog
+# listeners is reachable from the network, and outbound webhook delivery is
+# switched off (an appliance is assumed to have no internet path).
+services:
+  db:
+    # !override replaces the base file's list instead of appending to it.
+    # Without it Compose merges the two, the port gets published on both
+    # 0.0.0.0 and 127.0.0.1, and the second bind collides with the first —
+    # which defeats the whole point of this overlay.
+    ports: !override
+      - "127.0.0.1:${DB_PUBLISH_PORT:-5433}:5432"
+
+  backend:
+    environment:
+      DEPLOY_PROFILE: appliance
+      WEBHOOKS_ENABLED: "false"
+      COOKIE_SECURE: "false"
+    ports: !override
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+      # Syslog still listens on all interfaces: network gear has to reach it.
+      - "${SYSLOG_UDP_PORT:-514}:514/udp"
+      - "${SYSLOG_TCP_PORT:-514}:514/tcp"
+
+  web:
+    ports: !override
+      - "127.0.0.1:${WEB_PORT:-8081}:80"
+      - "127.0.0.1:${WEB_TLS_PORT:-8443}:443"

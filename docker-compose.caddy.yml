@@ -1,0 +1,68 @@
+# Public-internet overlay: Caddy terminates TLS with a real Let's Encrypt
+# certificate instead of the self-signed one nginx generates for itself.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d
+#
+# Same application images as every other profile. What changes is only which
+# process owns ports 80 and 443, and that the backend now has two proxies in
+# front of it rather than one.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN, e.g. mysiem.duckdns.org}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:?set LETSENCRYPT_EMAIL}
+    ports:
+      # 80 is not optional: the ACME HTTP-01 challenge is served on it, and
+      # Caddy uses it to redirect visitors to https.
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data      # certificates and ACME account keys live here
+      - caddyconfig:/config
+    depends_on:
+      - web
+
+  web:
+    # Caddy is the only thing that should be reachable from outside now.
+    # !override replaces the base file's list rather than appending to it.
+    ports: !override []
+
+  backend:
+    environment:
+      # Two proxies in front: Caddy, then nginx. Without this the audit trail
+      # records nginx's container address instead of the real client.
+      TRUST_PROXY_HOPS: 2
+      COOKIE_SECURE: "true"
+    ports: !override
+      # The API is reached through Caddy; only syslog stays exposed, because
+      # network gear cannot speak HTTP.
+      - "${SYSLOG_UDP_PORT:-514}:514/udp"
+      - "${SYSLOG_TCP_PORT:-514}:514/tcp"
+
+  db:
+    ports: !override []
+
+  # Keeps the DuckDNS record pointing at this machine. The free dynamic-DNS
+  # record is only useful while it tracks the current address, and an Azure VM
+  # with a dynamic public IP will change it across a deallocate/start cycle.
+  duckdns:
+    image: alpine:3.20
+    restart: unless-stopped
+    environment:
+      DUCKDNS_SUBDOMAIN: ${DUCKDNS_SUBDOMAIN:?set DUCKDNS_SUBDOMAIN, the name without .duckdns.org}
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN:?set DUCKDNS_TOKEN from https://www.duckdns.org}
+    command: >
+      sh -c 'apk add --no-cache curl >/dev/null &&
+      while true; do
+        result=$$(curl -fsS "https://www.duckdns.org/update?domains=$$DUCKDNS_SUBDOMAIN&token=$$DUCKDNS_TOKEN&ip=" || echo FAIL);
+        echo "[duckdns] $$(date -u +%FT%TZ) $$DUCKDNS_SUBDOMAIN -> $$result";
+        sleep 300;
+      done'
+
+volumes:
+  caddydata:
+  caddyconfig:

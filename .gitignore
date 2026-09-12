@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+coverage/
+.DS_Store
+tsconfig.tsbuildinfo
+
+# GeoIP databases are downloaded, not committed (~120MB, CC-BY attribution)
+geoip/*.mmdb
+geoip/*.gz

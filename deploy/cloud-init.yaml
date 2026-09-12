@@ -1,0 +1,54 @@
+#cloud-config
+# Runs once on first boot of the Azure VM. Installs Docker and nothing else —
+# the application is deployed afterwards, so that a rebuild of the VM does not
+# depend on this file being correct.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - ufw
+
+write_files:
+  # Journald fills the disk on a log collector faster than on most machines.
+  - path: /etc/systemd/journald.conf.d/size.conf
+    content: |
+      [Journal]
+      SystemMaxUse=500M
+
+runcmd:
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - >
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc]
+    https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable"
+    > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker ${admin_username}
+  - systemctl enable --now docker
+
+  # A host firewall as well as the Azure NSG. Two layers, because an NSG rule
+  # loosened by accident should not be the only thing standing there.
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow 443/udp
+  - ufw allow 514/udp
+  - ufw allow 514/tcp
+  - ufw --force enable
+
+  # 8 GB with no swap is tight once Postgres and a Node build are both running.
+  - fallocate -l 2G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+final_message: "docker ready after $UPTIME seconds"

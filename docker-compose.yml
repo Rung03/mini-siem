@@ -1,0 +1,67 @@
+# Base stack. Used as-is for the SaaS profile; the appliance profile layers
+# docker-compose.appliance.yml on top of this file. Same images either way.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PUBLISH_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      # Root context: the image needs both backend/ and db/migrations.
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Optional GeoIP databases. Absent is a supported state: the geo columns
+      # simply stay null. Populate with `make geoip`.
+      - ./geoip:/app/geoip:ro
+    ports:
+      - "${API_PORT:-8080}:8080"
+      - "${SYSLOG_UDP_PORT:-514}:514/udp"
+      - "${SYSLOG_TCP_PORT:-514}:514/tcp"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        API_HOST: backend:8080
+    restart: unless-stopped
+    environment:
+      # Common name baked into the self-signed certificate on first boot.
+      TLS_CN: ${TLS_CN:-localhost}
+    depends_on:
+      - backend
+    volumes:
+      - tlscerts:/etc/nginx/certs
+    ports:
+      - "${WEB_PORT:-8081}:80"
+      - "${WEB_TLS_PORT:-8443}:443"
+
+volumes:
+  pgdata:
+  tlscerts:
