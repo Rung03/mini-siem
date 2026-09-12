@@ -7,22 +7,6 @@ import { normalize } from '../src/normalize/index.js';
 import type { CanonicalEvent, SourceType } from '../src/normalize/schema.js';
 import { insertEvents } from '../src/pipeline/writer.js';
 
-/**
- * Demo data.
- *
- * Every event below is generated as the raw payload its source would actually
- * emit — a FortiGate key=value line, a Windows 4625 record, an M365 audit
- * entry — and then pushed through the real parsers and the real writer. Nothing
- * is inserted pre-normalized. If a parser is wrong, this seed shows it.
- *
- * It builds 24 hours of ordinary login traffic for two tenants, and then one
- * brute force: a single address producing failure after failure inside a few
- * minutes, which is exactly what the seeded alert rule is watching for.
- *
- * Safe to run more than once; it will not duplicate tenants, users or
- * collectors, though it does add another day of events each time.
- */
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 interface TenantSpec {
@@ -63,10 +47,6 @@ const TENANTS: TenantSpec[] = [
 ];
 
 const DEFAULT_PASSWORD = 'demo-password-change-me';
-
-// ---------------------------------------------------------------------------
-// Raw payload generators — one per source type
-// ---------------------------------------------------------------------------
 
 function iso(d: Date): string {
   return d.toISOString();
@@ -201,21 +181,12 @@ const GENERATORS: Record<SourceType, Generator> = {
   generic: (ts, u, ip, ok, s) => sshdLine(ts, u, ip, ok, pickFrom(s.hosts)),
 };
 
-// ---------------------------------------------------------------------------
-// Traffic shaping
-// ---------------------------------------------------------------------------
-
 function pickFrom<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]!;
 }
 
-/**
- * Logins cluster around the start of the working day and thin out overnight.
- * Without this the chart is a flat line and "which period was unusually dense"
- * has no answer.
- */
 function officeHoursWeight(hourUtc: number): number {
-  const local = (hourUtc + 7) % 24; // demo tenants sit in UTC+7
+  const local = (hourUtc + 7) % 24;
   if (local >= 8 && local <= 10) return 3.0;
   if (local >= 11 && local <= 17) return 1.6;
   if (local >= 18 && local <= 21) return 0.6;
@@ -233,35 +204,17 @@ function internalIp(spec: TenantSpec): string {
   return `${spec.subnet}.${2 + Math.floor(Math.random() * 250)}`;
 }
 
-/**
- * Addresses the "external" failures come from.
- *
- * The RFC5737 documentation ranges are the correct thing to put in synthetic
- * logs, but they deliberately geolocate to nothing and resolve to nothing —
- * which left the enrichment columns empty for the entire demo dataset and made
- * a working feature look broken.
- *
- * So the list mixes both: documentation ranges for most of the noise, and a
- * handful of well-known public resolvers, which are public infrastructure
- * rather than anybody's private estate, and which do carry geo and PTR data.
- */
 const EXTERNAL_IPS = [
-  // Documentation ranges — no geo, no PTR, by design.
   '203.0.113.12', '203.0.113.44', '198.51.100.23',
   '198.51.100.77', '192.0.2.31', '192.0.2.155',
-  // Public resolvers — these light up the geo and hostname columns.
-  '8.8.8.8',          // dns.google, US
-  '1.1.1.1',          // one.one.one.one, AU
-  '9.9.9.9',          // dns9.quad9.net, CH
-  '208.67.222.222',   // resolver1.opendns.com, US
-  '77.88.8.8',        // Yandex, RU
-  '168.95.1.1',       // HiNet, TW
-  '114.114.114.114',  // 114DNS, CN
+  '8.8.8.8',
+  '1.1.1.1',
+  '9.9.9.9',
+  '208.67.222.222',
+  '77.88.8.8',
+  '168.95.1.1',
+  '114.114.114.114',
 ];
-
-// ---------------------------------------------------------------------------
-// Seeding
-// ---------------------------------------------------------------------------
 
 interface SeededCollector {
   id: string;
@@ -341,7 +294,6 @@ async function ensureBruteForceRule(tenantId: string): Promise<void> {
   });
 }
 
-/** Events span the last 24 hours, so yesterday's partitions have to exist. */
 async function ensurePartitionsForWindow(tenantId: string, now: Date): Promise<void> {
   await withOwner(async (db) => {
     for (const offset of [-1, 0, 1]) {
@@ -364,9 +316,6 @@ async function seedTenant(
   await ensureBruteForceRule(tenantId);
   await ensurePartitionsForWindow(tenantId, now);
 
-  // Syslog collectors are identified by sender address, so each one needs its
-  // own range: the firewall sits on the tenant's first /24, the Linux estate
-  // on the next one along.
   const octets = spec.subnet.split('.');
   const serverSubnet = `${octets[0]}.${octets[1]}.${Number(octets[2]) + 1}`;
 
@@ -380,11 +329,6 @@ async function seedTenant(
   ];
 
   if (isFirstTenant) {
-    // Syslog sent from the host arrives from Docker's bridge, which matches
-    // none of the ranges above, so the run-book's `logger` example would be
-    // dropped as an unknown sender. This collector exists so that example
-    // works out of the box; disable it on the Collectors screen if you want
-    // to see the unknown-sender path instead.
     collectors.push(
       await ensureCollector(tenantId, 'local-test-syslog', 'syslog', 'generic', '172.16.0.0/12'),
     );
@@ -396,7 +340,6 @@ async function seedTenant(
     for (const c of issued) console.log(`    ${c.sourceType.padEnd(16)} ${c.token}`);
   }
 
-  // --- ordinary traffic --------------------------------------------------
   const byCollector = new Map<string, { sourceType: SourceType; events: CanonicalEvent[] }>();
   const queue = (collector: SeededCollector, event: CanonicalEvent) => {
     let entry = byCollector.get(collector.id);
@@ -412,8 +355,6 @@ async function seedTenant(
     const ts = randomTimestamp(now);
     const user = pickFrom(spec.users);
 
-    // Roughly one login in eight fails, which is about what a real estate of
-    // this size looks like once you count fat fingers and expired passwords.
     const ok = Math.random() > 0.13;
     const external = !ok && Math.random() < 0.35;
     const ip = external ? pickFrom(EXTERNAL_IPS) : internalIp(spec);
@@ -422,12 +363,6 @@ async function seedTenant(
     queue(collector, normalize(collector.sourceType, { raw, receivedAt: ts, peerIp: ip }));
   }
 
-  // --- the brute force ---------------------------------------------------
-  // Twelve failures from one address, ending half a minute ago and spanning
-  // about a minute. The rule looks back five minutes for five failures, so
-  // the burst has to sit *inside* that window — put it further back and the
-  // evaluator will never see it, however obvious the attack looks to a human.
-  // The next cycle (within 30s) raises the alert with nobody doing anything.
   const attacker = '203.0.113.66';
   const burstEnd = now.getTime() - 30 * 1000;
   const target = collectors.find((c) => c.sourceType === 'windows_ad') ?? collectors[0]!;
@@ -439,7 +374,6 @@ async function seedTenant(
     queue(target, normalize(target.sourceType, { raw, receivedAt: ts, peerIp: attacker }));
   }
 
-  // --- write -------------------------------------------------------------
   let total = 0;
   for (const [collectorId, entry] of byCollector) {
     for (let i = 0; i < entry.events.length; i += 500) {
@@ -468,10 +402,6 @@ async function main(): Promise<void> {
   const now = new Date();
   console.log('Seeding demo data…');
 
-  // The seed runs as its own process, so it has to open the GeoIP database
-  // itself — the server's call in src/index.ts does nothing for us here.
-  // Without this the events land with a hostname but no country, which looks
-  // exactly like broken enrichment rather than an uninitialised reader.
   const geo = await initGeoip();
   console.log(`  GeoIP: ${geo.available ? geo.description : 'not available, geo columns stay empty'}`);
 

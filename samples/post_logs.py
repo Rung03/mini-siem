@@ -48,7 +48,6 @@ USERS = ["alice", "bob", "carol", "dave", "eve", "admin", "svc_backup"]
 IPS = ["203.0.113.7", "203.0.113.44", "198.51.100.23", "10.0.1.10", "192.0.2.31"]
 
 
-# Every spelling of "when did this happen" across the sample files.
 TIME_FIELDS = ("@timestamp", "eventTime", "CreationTime", "TimeCreated", "timestamp")
 
 
@@ -62,7 +61,6 @@ def retime(value, base: datetime, counter: list[int]):
             if key in TIME_FIELDS and isinstance(inner, str):
                 counter[0] += 1
                 stamp = base - timedelta(seconds=counter[0] * 7)
-                # Microsoft writes audit times without a zone; keep that shape.
                 out[key] = (
                     stamp.strftime("%Y-%m-%dT%H:%M:%S")
                     if key in ("CreationTime",)
@@ -87,8 +85,6 @@ def post(url: str, token: str, body: bytes, insecure: bool) -> dict:
 
     context = None
     if url.startswith("https://") and insecure:
-        # The SaaS profile ships a self-signed certificate by default; the
-        # assignment allows that, so make it usable without extra setup.
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
@@ -180,7 +176,7 @@ def main() -> int:
                     retime(payload, datetime.now(timezone.utc), [0])
                 ).encode("utf-8")
             except json.JSONDecodeError:
-                pass  # NDJSON or plain text: send as-is
+                pass
 
         result = post(args.url, args.token, body, args.insecure)
         accepted = result.get("accepted", 0)

@@ -1,32 +1,15 @@
-# Caddy sits at the edge and does one job: terminate TLS with a real
-# certificate, then hand everything to the nginx container that already knows
-# how to serve this application.
-#
-# Certificates are issued and renewed automatically over ACME HTTP-01, which
-# needs nothing but port 80 reachable from the internet. That is why the
-# standard Caddy image is enough here: the DNS-01 challenge would need a custom
-# build with the DuckDNS module, and is only worth it for wildcard
-# certificates or when port 80 is blocked.
-
 {
 	email {$LETSENCRYPT_EMAIL}
-	# Uncomment while testing to avoid Let's Encrypt's rate limits. Certificates
-	# from staging are untrusted by browsers — that is the point.
-	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
 {$SITE_DOMAIN} {
 	encode gzip
 
-	# The application, static files and API alike. `web` already routes /api
-	# and /ingest to the backend, so there is one upstream rather than three
-	# rules that can drift apart.
 	reverse_proxy web:80 {
 		header_up X-Forwarded-Proto {scheme}
 		header_up X-Real-IP {remote_host}
 	}
 
-	# Caddy adds HSTS on its own once a certificate is in place.
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY

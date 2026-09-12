@@ -10,14 +10,6 @@ import { closeAllPools } from './db/pool.js';
 import { startSyslogUdp, startSyslogTcp } from './ingest/syslog.js';
 import { batcher } from './pipeline/batcher.js';
 
-/**
- * Boot order matters:
- *   1. roles, so the owner connection can authenticate at all
- *   2. migrations, as the owner
- *   3. partitions for today, or the first insert lands in the default
- *   4. listeners, only once the database can actually accept what they collect
- */
-
 async function main(): Promise<void> {
   console.log(`[boot] mini-siem starting — profile: ${config.profile}`);
 
@@ -55,8 +47,6 @@ async function main(): Promise<void> {
 
     await new Promise<void>((resolve) => server.close(() => resolve()));
 
-    // Anything the syslog listeners accepted but have not written yet. The
-    // sender already believes this data is delivered, so it gets written.
     await batcher.close();
     await closeAllPools();
 

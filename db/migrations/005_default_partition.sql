@@ -1,23 +1,5 @@
--- 005_default_partition.sql
---
--- A catch-all partition for events whose timestamp falls outside the days that
--- have been pre-created.
---
--- Without this, an INSERT for an unexpected date fails outright with "no
--- partition of relation events found for row" — which is exactly what happens
--- when someone replays a historical export. The assignment's own sample
--- payloads are dated 2025-08-20, so this is the normal case for a batch
--- upload, not an edge case. Losing a log line because of how storage is laid
--- out is not an acceptable failure mode for a system whose job is keeping log
--- lines.
-
 CREATE TABLE events_backfill PARTITION OF events DEFAULT;
 
--- Retention still has to apply here. Day partitions are removed by dropping
--- the table, but this one is permanent, so expired rows are deleted from it
--- instead. That is done by the owner connection during maintenance; no
--- application role is granted DELETE on events, so an Admin still cannot erase
--- anything (002_rls.sql is unchanged).
 CREATE OR REPLACE FUNCTION purge_backfill_partition(p_keep_days integer)
   RETURNS bigint
   LANGUAGE plpgsql
@@ -32,9 +14,6 @@ CREATE OR REPLACE FUNCTION purge_backfill_partition(p_keep_days integer)
   END;
   $$;
 
--- Creating a day partition fails if the default already holds rows for that
--- day. Recreate the function so maintenance reports that instead of aborting:
--- the rows are stored and queryable either way.
 CREATE OR REPLACE FUNCTION ensure_day_partition(p_day date) RETURNS text
   LANGUAGE plpgsql
   AS $$
@@ -60,7 +39,6 @@ CREATE OR REPLACE FUNCTION ensure_day_partition(p_day date) RETURNS text
   END;
   $$;
 
--- ensure_tenant_partition calls the above and assumes it gets a table name.
 CREATE OR REPLACE FUNCTION ensure_tenant_partition(p_day date, p_tenant uuid) RETURNS text
   LANGUAGE plpgsql
   AS $$

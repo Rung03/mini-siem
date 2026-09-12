@@ -9,23 +9,12 @@ import { insertEvents } from '../pipeline/writer.js';
 import { resolveById } from './collectors.js';
 import { extractPayloads, type ExtractedPayload } from './http.js';
 
-/**
- * POST /api/ingest/file — the batch channel, for historical exports from AWS,
- * Active Directory or CrowdStrike.
- *
- * This one is authenticated as a signed-in user rather than by collector token,
- * because a person is doing it by hand. The collector still decides the tenant
- * and the parser; resolveById refuses a collector the caller's tenant does not
- * own, so a Viewer cannot upload into another customer's channel.
- */
-
 interface UploadResult {
   filename: string;
   accepted: number;
   unparsed: number;
 }
 
-/** A CSV export, header row and all, turned into per-row JSON objects. */
 function parseCsv(text: string): ExtractedPayload[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const headerLine = lines.shift();
@@ -155,8 +144,6 @@ export async function handleUpload(req: Request, res: Response): Promise<void> {
         }),
       );
 
-      // Write in slices so one oversized file does not become one enormous
-      // transaction holding locks on every partition it touches.
       const size = config.ingest.writeBatchSize;
       let accepted = 0;
       for (let i = 0; i < events.length; i += size) {

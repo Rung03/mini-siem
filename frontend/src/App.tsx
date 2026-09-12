@@ -16,7 +16,6 @@ export function useSession() {
         const { user } = await api.get<{ user: ApiUser }>('/auth/me');
         return user;
       } catch (err) {
-        // 401 is the normal signed-out state, not a failure worth retrying.
         if (err instanceof ApiError && err.status === 401) return null;
         throw err;
       }
@@ -26,17 +25,6 @@ export function useSession() {
   });
 }
 
-/**
- * Leaves the application entirely, by reloading it.
- *
- * A client-side route change is not enough. Sign-out has to guarantee that no
- * trace of the previous user is left on screen, and unwinding it through the
- * query cache means depending on invalidation order to decide whether the
- * shell unmounts before the router re-evaluates — which is how the first
- * attempt at this ended up on a dashboard full of "authentication required".
- * A reload has none of those failure modes: the cookie is already gone
- * server-side, so the fresh page lands on the sign-in form.
- */
 function endSession(): void {
   window.location.replace('/');
 }
@@ -94,9 +82,6 @@ function Shell({ user }: { user: ApiUser }) {
 export function App() {
   const { data: user, isLoading } = useSession();
 
-  // A session lasts 12 hours, so it will expire under an open tab. When it
-  // does, go back to the sign-in form rather than leaving every panel showing
-  // an error the user cannot act on.
   useEffect(() => {
     setUnauthorizedHandler(endSession);
   }, []);

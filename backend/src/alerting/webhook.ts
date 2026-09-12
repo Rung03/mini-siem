@@ -1,18 +1,6 @@
 import { config } from '../config.js';
 import { withEvaluator } from '../db/tenant.js';
 
-/**
- * Outbound webhook delivery.
- *
- * Pending alerts are picked up from the database rather than posted inline when
- * the alert fires, so a webhook endpoint that is slow or down cannot hold up
- * rule evaluation, and a crash mid-delivery leaves the alert queued rather than
- * lost.
- *
- * On the appliance profile WEBHOOKS_ENABLED is false and this never runs —
- * an air-gapped box has nowhere to post to.
- */
-
 const MAX_ATTEMPTS = 5;
 const BATCH = 20;
 
@@ -86,8 +74,6 @@ export async function deliverPendingWebhooks(): Promise<number> {
     }
 
     const attempts = alert.webhook_attempts + 1;
-    // Give up only after MAX_ATTEMPTS; until then it stays pending and the
-    // next cycle picks it up again.
     const status = error === null ? 'sent' : attempts >= MAX_ATTEMPTS ? 'failed' : 'pending';
 
     await withEvaluator(async (db) => {

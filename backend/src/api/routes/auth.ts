@@ -39,8 +39,6 @@ export function authRouter(): Router {
         return rows[0] ?? null;
       });
 
-      // Spend the same time on an unknown address as on a wrong password, so
-      // the response cannot be used to enumerate accounts.
       const ok = row ? await verifyPassword(password, row.password_hash) : await dummyVerify();
 
       if (!row || !ok || !row.active) {

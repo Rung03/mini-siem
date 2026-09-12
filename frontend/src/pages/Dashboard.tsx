@@ -30,7 +30,6 @@ import {
   useTimeRange,
 } from '../components/common.js';
 
-/** Dashboard: totals, activity over time, and the worst offenders. */
 export function Dashboard({ user }: { user: ApiUser }) {
   const { key, setKey, from, to, bucket } = useTimeRange('24h');
   const [tenant, setTenant] = useState('');

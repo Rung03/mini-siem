@@ -15,21 +15,6 @@ import {
   tryJson,
 } from '../util.js';
 
-/**
- * The catch-all: plain syslog from anything that is not one of the named
- * products, plus JSON from in-house applications.
- *
- * It still tries hard on the login story, because in practice the most common
- * thing on this channel is sshd:
- *
- *   Failed password for invalid user admin from 203.0.113.66 port 52344 ssh2
- *   Accepted password for jsmith from 10.0.0.5 port 51234 ssh2
- *
- * Nothing here ever returns parseOk false. A line that matches no pattern is
- * still a real event with its raw text intact — this channel exists precisely
- * for payloads whose shape we do not know in advance.
- */
-
 interface LoginHint {
   outcome: Outcome;
   user: string | null;
@@ -67,7 +52,6 @@ function sniffLogin(message: string): LoginHint | null {
     }
   }
 
-  // "Invalid user admin from 203.0.113.44" — no password attempt, still a probe.
   const probe = /Invalid user (\S+) from (\S+)/i.exec(message);
   if (probe) {
     return { outcome: 'failure', user: probe[1]!, ip: coerceIp(probe[2]), port: portNumber };
@@ -75,7 +59,6 @@ function sniffLogin(message: string): LoginHint | null {
   return null;
 }
 
-/** An application shipping its own JSON, in whatever field spelling it likes. */
 function fromJson(o: Record<string, unknown>, input: ParserInput): CanonicalEvent {
   const event = blankEvent('generic', input);
 
@@ -137,7 +120,6 @@ function fromJson(o: Record<string, unknown>, input: ParserInput): CanonicalEven
 export const parseGeneric: Parser = (input): CanonicalEvent => {
   const json = input.json ?? tryJson(input.raw);
 
-  // The half-normalized shape from the assignment's API sample.
   if (looksLikeEnvelope(json)) {
     const event = parseEnvelope('generic', input, json as Record<string, unknown>);
     event.source ??= 'api';
@@ -155,7 +137,6 @@ export const parseGeneric: Parser = (input): CanonicalEvent => {
   event.severity = fromSyslogSeverity(frame.severity) ?? (hint?.outcome === 'failure' ? 6 : 2);
 
   if (hint) {
-    // sshd and friends: this is the login story on a plain syslog channel.
     event.source = 'network';
     event.eventCategory = 'authentication';
     event.eventType = hint.outcome === 'failure' ? 'login_failed' : 'login_succeeded';
@@ -166,7 +147,6 @@ export const parseGeneric: Parser = (input): CanonicalEvent => {
     event.srcIp = hint.ip ?? input.peerIp ?? null;
     event.srcPort = hint.port;
   } else {
-    // Device syslog such as the router sample: if=ge-0/0/1 event=link-down
     event.source = 'network';
     event.eventCategory = 'system';
     event.eventType = coerceString(kv.event) ?? frame.tag ?? 'log';

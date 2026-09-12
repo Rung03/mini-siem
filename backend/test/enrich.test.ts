@@ -11,16 +11,6 @@ import type { GeoProvider } from '../src/enrich/geoip.js';
 import { normalize } from '../src/normalize/index.js';
 import type { CanonicalEvent } from '../src/normalize/schema.js';
 
-/**
- * Enrichment is decoration, so most of these tests are about what happens when
- * it goes wrong: the event has to survive a missing database, a throwing
- * provider and a nameserver that never answers.
- *
- * No test here touches the network or needs an .mmdb file — the providers are
- * injected. That matters, because the GeoIP database is not in the repository
- * and `npm test` has to pass on a machine that never downloaded it.
- */
-
 function eventFor(ip: string): CanonicalEvent {
   return normalize('generic', {
     raw: JSON.stringify({ user: 'alice', ip, action: 'login', result: 'failed' }),
@@ -48,9 +38,6 @@ const stubGeo: GeoProvider = {
 beforeEach(() => {
   resetRdnsCache();
   setGeoProvider(null);
-  // Never the real resolver: enrichBatch schedules a lookup for every address
-  // it sees, and a test that reaches actual DNS is a test that depends on the
-  // machine it runs on.
   setResolver(async () => {
     throw new Error('no resolver configured for this test');
   });
@@ -80,8 +67,6 @@ describe('address classification', () => {
   });
 
   it('treats the RFC5737 documentation ranges as reserved', () => {
-    // These fill the sample data. They resolve to nothing and geolocate to
-    // nothing, so both lookups should skip them entirely.
     expect(classifyIp('203.0.113.66')).toBe('reserved');
     expect(classifyIp('198.51.100.23')).toBe('reserved');
     expect(classifyIp('192.0.2.31')).toBe('reserved');
@@ -117,7 +102,6 @@ describe('geo enrichment', () => {
   });
 
   it('leaves the event intact when no database is loaded', () => {
-    // The default state: the .mmdb file is not in the repository.
     const [event] = enrichBatch([eventFor('8.8.8.8')]);
 
     expect(event!.geoCountryIso).toBeNull();
@@ -170,13 +154,10 @@ describe('reverse DNS', () => {
   it('returns null on the first sight of an address, then caches it', async () => {
     setResolver(async (ip) => (ip === '10.0.0.44' ? ['ws-114.corp.local'] : []));
 
-    // First event: nothing cached, so no hostname and a lookup is scheduled.
     expect(hostnameFor('10.0.0.44')).toBeNull();
 
-    // Let the background lookup settle.
     await new Promise((r) => setTimeout(r, 20));
 
-    // Second event from the same address now has it.
     expect(hostnameFor('10.0.0.44')).toBe('ws-114.corp.local');
   });
 
@@ -212,7 +193,6 @@ describe('reverse DNS', () => {
     const [event] = enrichBatch([eventFor('10.0.0.77')]);
     const elapsed = Date.now() - started;
 
-    // The whole point: a dead nameserver costs the ingest path nothing.
     expect(elapsed).toBeLessThan(50);
     expect(event!.srcHostname).toBeNull();
     expect(event!.srcIp).toBe('10.0.0.77');

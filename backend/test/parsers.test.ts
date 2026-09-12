@@ -114,7 +114,6 @@ describe('m365', () => {
     expect(e.eventOutcome).toBe('failure');
     expect(e.userName).toBe('jsmith@contoso.com');
     expect(e.attrs.reason).toBe('invalid user name or password');
-    // No zone in the payload, but Microsoft means UTC.
     expect(e.ts.toISOString()).toBe('2026-09-12T09:16:00.000Z');
   });
 
@@ -269,14 +268,6 @@ describe('every parser', () => {
   });
 });
 
-
-/**
- * The sample payloads from section 4 of the assignment, verbatim.
- *
- * These are what a grader will paste in, and several of them are not the
- * vendor's real wire format but a half-normalized shape, so they exercise a
- * different path through the parsers than the fixtures above.
- */
 describe('assignment sample payloads', () => {
   it('4.1 firewall syslog', () => {
     const e = run(
@@ -334,7 +325,6 @@ describe('assignment sample payloads', () => {
     expect(e.userName).toBe('alice');
     expect(e.srcIp).toBe('203.0.113.7');
     expect(e.ts.toISOString()).toBe('2025-08-20T07:20:00.000Z');
-    // The payload names a tenant, but routing comes from the collector.
     expect(e.attrs.claimed_tenant).toBe('demoA');
   });
 

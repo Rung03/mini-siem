@@ -8,8 +8,6 @@ import './styles.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // A SIEM dashboard that is a minute stale is a SIEM dashboard nobody
-      // trusts. Alerts fire on a 30 second cycle, so match it.
       refetchInterval: 30_000,
       refetchOnWindowFocus: true,
       staleTime: 10_000,

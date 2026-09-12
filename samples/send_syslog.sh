@@ -1,22 +1,4 @@
 #!/usr/bin/env bash
-#
-# Sends the sample syslog lines to the collector over UDP (default) or TCP.
-#
-#   ./send_syslog.sh                         # firewall + network samples, UDP
-#   ./send_syslog.sh --tcp                   # same, over TCP with LF framing
-#   ./send_syslog.sh --host 10.0.0.5 --port 514
-#   ./send_syslog.sh --file firewall_syslog.log
-#   ./send_syslog.sh --brute                 # a burst that trips the alert rule
-#   ./send_syslog.sh --keep-timestamps       # send the lines exactly as written
-#
-# The sample lines carry fixed August dates, which fall outside both the
-# default dashboard window and the 7-day retention horizon. By default their
-# timestamps are rewritten to now so the lines actually show up; pass
-# --keep-timestamps to send them verbatim.
-#
-# The sending address has to match a syslog collector's CIDR, otherwise the
-# line is recorded under Administration > Storage > Rejected ingest rather than
-# stored. `make seed` creates one covering the Docker bridge for this reason.
 set -euo pipefail
 
 HOST="${SYSLOG_HOST:-127.0.0.1}"
@@ -46,8 +28,6 @@ if [[ ${#FILES[@]} -eq 0 ]]; then
   FILES=(firewall_syslog.log network_syslog.log)
 fi
 
-# nc is not on every machine (Git Bash on Windows has none), so fall back to a
-# tiny Node sender. One of the two is essentially always present.
 send() {
   local line="$1"
   if command -v nc >/dev/null 2>&1; then
@@ -75,7 +55,6 @@ send() {
   fi
 }
 
-# Rewrites whichever timestamp form the line uses to the current time.
 retime() {
   local line="$1"
   local rfc3164 date_part time_part
@@ -83,9 +62,7 @@ retime() {
   date_part=$(date -u '+%Y-%m-%d')
   time_part=$(date -u '+%H:%M:%S')
 
-  # <134>Aug 20 12:44:56 host ...
   line=$(printf '%s' "$line" | sed -E "s/^(<[0-9]+>)[A-Z][a-z]{2}[[:space:]]+[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}/\1${rfc3164}/")
-  # date=2026-09-12 time=09:14:22
   line=$(printf '%s' "$line" | sed -E "s/date=[0-9]{4}-[0-9]{2}-[0-9]{2}/date=${date_part}/; s/time=[0-9]{2}:[0-9]{2}:[0-9]{2}/time=${time_part}/")
   printf '%s' "$line"
 }
@@ -93,8 +70,6 @@ retime() {
 count=0
 
 if [[ "$BRUTE" == true ]]; then
-  # Twelve failures from one address inside a minute. The seeded rule fires on
-  # five within five minutes, so this raises an alert on the next 30s cycle.
   echo "sending 12 failed logins from 203.0.113.66 over $PROTO://$HOST:$PORT"
   for i in $(seq 1 12); do
     stamp=$(date -u '+%b %e %H:%M:%S')

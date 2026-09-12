@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type ApiUser, type Tenant } from '../api/client.js';
 
-/** Ranges the dashboard offers, in the order they appear. */
 export const RANGES = [
   { key: '1h', label: 'Last hour', ms: 60 * 60 * 1000, bucket: 'minute' as const },
   { key: '24h', label: 'Last 24 hours', ms: 24 * 60 * 60 * 1000, bucket: 'hour' as const },
@@ -15,8 +14,6 @@ export function useTimeRange(initial: RangeKey = '24h') {
   const [key, setKey] = useState<RangeKey>(initial);
   const range = RANGES.find((r) => r.key === key) ?? RANGES[1]!;
 
-  // Anchored to the minute so the query key does not change on every render,
-  // which would defeat caching entirely.
   const now = Math.floor(Date.now() / 60_000) * 60_000;
   const from = new Date(now - range.ms).toISOString();
   const to = new Date(now).toISOString();
@@ -52,10 +49,6 @@ export function useTenants(enabled: boolean) {
   });
 }
 
-/**
- * Only shown to Admins. A Viewer has exactly one tenant and the server ignores
- * the parameter for them anyway — the database would too.
- */
 export function TenantSelect({
   user,
   value,
@@ -81,11 +74,6 @@ export function TenantSelect({
   );
 }
 
-/**
- * id -> display name. An Admin sees rows from every tenant side by side, and
- * collectors and rules are commonly named the same thing in each one, so
- * without this the tables show what look like duplicate rows.
- */
 export function useTenantNames(): Map<string, string> {
   const { data } = useTenants(true);
   return new Map((data?.tenants ?? []).map((t) => [t.id, t.name]));

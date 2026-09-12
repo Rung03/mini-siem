@@ -6,13 +6,6 @@ import { SOURCES, SOURCE_TYPES } from '../../normalize/schema.js';
 import { handler, parse, resolveRange } from '../util.js';
 import { buildFilter } from './events.js';
 
-/**
- * The dashboard's numbers. Three questions from the README:
- *   how many logins succeeded and failed today,
- *   when was it unusually busy,
- *   who fails most and which address hits hardest.
- */
-
 const baseQuery = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
@@ -50,7 +43,6 @@ const topQuery = baseQuery.extend({
 export function statsRouter(): Router {
   const router = Router();
 
-  /** Card totals: successes, failures, and everything in the window. */
   router.get(
     '/stats/summary',
     requireAuth,
@@ -91,11 +83,6 @@ export function statsRouter(): Router {
     }),
   );
 
-  /**
-   * The time series behind the chart. Buckets are generated rather than
-   * grouped, so a quiet hour shows up as a zero instead of a gap — which is
-   * what makes an unusually dense period visible by eye.
-   */
   router.get(
     '/stats/timeseries',
     requireAuth,
@@ -145,10 +132,6 @@ export function statsRouter(): Router {
     }),
   );
 
-  /**
-   * Top-N by user, address, host or source. The column name comes from a fixed
-   * enum above, never from the request string.
-   */
   router.get(
     '/stats/top',
     requireAuth,
@@ -188,7 +171,6 @@ export function statsRouter(): Router {
     }),
   );
 
-  /** What is actually feeding the system, for the admin overview. */
   router.get(
     '/stats/sources',
     requireAuth,

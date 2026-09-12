@@ -11,22 +11,6 @@ import {
   stripSyslogHeader,
 } from '../util.js';
 
-/**
- * Firewall syslog in key=value form. Two dialects, because both turn up:
- *
- * FortiGate's own:
- *   date=2026-09-12 time=09:14:22 devname="FG100E" level="alert"
- *   logdesc="Admin login failed" user="admin" srcip=203.0.113.44
- *   action="login" status="failed"
- *
- * and the shorter vendor-neutral form used by the assignment's sample:
- *   <134>Aug 20 12:44:56 fw01 vendor=demo product=ngfw action=deny
- *   src=10.0.1.10 dst=8.8.8.8 spt=5353 dpt=53 proto=udp policy=Block-DNS
- *
- * They differ mostly in field spelling, so one parser reads both rather than
- * two parsers disagreeing about what a firewall log looks like.
- */
-
 const SUCCESS = new Set(['success', 'succeeded', 'accept', 'ok', 'allow', 'permit']);
 const FAILURE = new Set(['failed', 'failure', 'denied', 'deny', 'blocked', 'drop']);
 
@@ -45,7 +29,6 @@ function outcomeOf(kv: Record<string, string>): Outcome {
   return 'unknown';
 }
 
-/** Section 3's action vocabulary, from whichever field carried the verb. */
 function actionOf(kv: Record<string, string>): string | null {
   const raw = (kv.action ?? '').toLowerCase();
   if (SUCCESS.has(raw)) return raw === 'accept' || raw === 'permit' ? 'allow' : raw;
@@ -67,7 +50,6 @@ export const parseFortigate: Parser = (input): CanonicalEvent => {
 
   const event = blankEvent('fortigate', input);
 
-  // FortiGate splits the timestamp across two fields; eventtime is epoch ns.
   event.ts =
     (kv.date && kv.time ? coerceDate(`${kv.date}T${kv.time}Z`) : null) ??
     (kv.eventtime ? coerceDate(Math.floor(Number(kv.eventtime) / 1e6)) : null) ??

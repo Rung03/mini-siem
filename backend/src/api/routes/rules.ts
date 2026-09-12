@@ -6,15 +6,6 @@ import { withActor } from '../../db/tenant.js';
 import { SOURCE_TYPES } from '../../normalize/schema.js';
 import { handler, parse, tenantScope } from '../util.js';
 
-/**
- * Alert rules. Readable by anyone signed in (a Viewer should be able to see why
- * it was alerted), editable by Admins only.
- *
- * The rule the README describes — more than five failures from one address
- * within five minutes — is just a row here: outcome failure, group by src_ip,
- * window 300, threshold 5.
- */
-
 const ruleBody = z.object({
   tenant_id: z.string().uuid(),
   name: z.string().min(1).max(120),
@@ -122,8 +113,6 @@ export function rulesRouter(): Router {
         return;
       }
 
-      // Keys come from the schema above, not from the request object, so the
-      // assignment list cannot be steered by the caller.
       const allowed = new Set(Object.keys(ruleUpdate.shape));
       const sets: string[] = [];
       const params: unknown[] = [];
@@ -171,8 +160,6 @@ export function rulesRouter(): Router {
       const id = parse(z.string().uuid(), req.params.id);
 
       const deleted = await withActor(actor, async (db) => {
-        // Alerts reference the rule that raised them, so a rule with history
-        // is disabled rather than removed — the evidence outlives the config.
         const { rows: used } = await db.query<{ count: number }>(
           'SELECT count(*) AS count FROM alerts WHERE rule_id = $1',
           [id],

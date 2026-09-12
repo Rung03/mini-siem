@@ -2,7 +2,6 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 import type { Actor } from '../db/tenant.js';
 
-/** Wraps an async handler so a rejected promise reaches the error middleware. */
 export function handler(
   fn: (req: Request, res: Response) => Promise<void>,
 ): RequestHandler {
@@ -42,9 +41,6 @@ export function errorMiddleware(
     return;
   }
 
-  // A permission denied here is usually the system working as designed —
-  // something tried to UPDATE or DELETE an event. Say so plainly rather than
-  // dressing it up as a generic failure.
   const pgCode = (err as { code?: string } | null)?.code;
   if (pgCode === '42501') {
     res.status(403).json({
@@ -58,14 +54,6 @@ export function errorMiddleware(
   res.status(500).json({ error: 'internal error' });
 }
 
-/**
- * Which tenant a request is about.
- *
- * A Viewer always gets its own, whatever the query string says. An Admin may
- * name one, or leave it out to mean "all tenants". Note that this only shapes
- * the WHERE clause — a Viewer's connection is confined by RLS regardless, so a
- * mistake here is a usability bug rather than a disclosure.
- */
 export function tenantScope(actor: Actor, requested: unknown): string | null {
   if (actor.role === 'viewer') return actor.tenantId;
   const value = typeof requested === 'string' && requested.trim() ? requested.trim() : null;
@@ -74,7 +62,6 @@ export function tenantScope(actor: Actor, requested: unknown): string | null {
 
 export const uuid = z.string().uuid();
 
-/** Shared time-window parsing: ISO strings, defaulting to the last 24 hours. */
 export const timeRange = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),

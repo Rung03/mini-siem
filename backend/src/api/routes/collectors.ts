@@ -11,20 +11,11 @@ import {
 import { SOURCE_TYPES } from '../../normalize/schema.js';
 import { handler, parse, tenantScope } from '../util.js';
 
-/**
- * Collector administration.
- *
- * A token is generated here, hashed immediately, and returned to the caller
- * exactly once. There is no endpoint that reads a token back, because the
- * database does not have one to read — only its SHA-256.
- */
-
 const createBody = z.object({
   tenant_id: z.string().uuid(),
   name: z.string().min(1).max(120),
   kind: z.enum(['http', 'syslog', 'file']),
   source_type: z.enum(SOURCE_TYPES),
-  /** Required for syslog collectors: which sender address this matches. */
   source_cidr: z.string().max(64).nullish(),
   enabled: z.boolean().default(true),
 });
@@ -76,8 +67,6 @@ export function collectorsRouter(): Router {
         return;
       }
 
-      // Only the HTTP channel authenticates with a token; syslog is identified
-      // by source address and uploads by the signed-in user.
       const token = body.kind === 'http' ? generateToken() : null;
 
       const collector = await withActor(actor, async (db) => {
@@ -111,7 +100,6 @@ export function collectorsRouter(): Router {
 
       res.status(201).json({
         collector,
-        // Shown once. After this response the plaintext exists nowhere.
         token,
       });
     }),
@@ -165,8 +153,6 @@ export function collectorsRouter(): Router {
         return row ?? null;
       });
 
-      // A disabled collector has to stop working immediately, not when the
-      // resolution cache happens to expire.
       invalidateCollectorCache();
 
       if (!collector) {
@@ -177,7 +163,6 @@ export function collectorsRouter(): Router {
     }),
   );
 
-  /** Issues a replacement token and invalidates the previous one. */
   router.post(
     '/collectors/:id/rotate-token',
     requireAdmin,

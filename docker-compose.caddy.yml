@@ -1,11 +1,3 @@
-# Public-internet overlay: Caddy terminates TLS with a real Let's Encrypt
-# certificate instead of the self-signed one nginx generates for itself.
-#
-#   docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d
-#
-# Same application images as every other profile. What changes is only which
-# process owns ports 80 and 443, and that the backend now has two proxies in
-# front of it rather than one.
 services:
   caddy:
     image: caddy:2-alpine
@@ -14,48 +6,30 @@ services:
       SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN, e.g. mysiem.duckdns.org}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:?set LETSENCRYPT_EMAIL}
     ports:
-      # 80 is not optional: the ACME HTTP-01 challenge is served on it, and
-      # Caddy uses it to redirect visitors to https.
       - "80:80"
       - "443:443"
-      - "443:443/udp"   # HTTP/3
+      - "443:443/udp"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddydata:/data      # certificates and ACME account keys live here
+      - caddydata:/data
       - caddyconfig:/config
     depends_on:
       - web
 
   web:
-    # Caddy is the only thing that should be reachable from outside now.
-    # !override replaces the base file's list rather than appending to it.
     ports: !override []
 
   backend:
     environment:
-      # Two proxies in front: Caddy, then nginx. Without this the audit trail
-      # records nginx's container address instead of the real client.
       TRUST_PROXY_HOPS: 2
       COOKIE_SECURE: "true"
     ports: !override
-      # The API is reached through Caddy; only syslog stays exposed, because
-      # network gear cannot speak HTTP.
       - "${SYSLOG_UDP_PORT:-514}:514/udp"
       - "${SYSLOG_TCP_PORT:-514}:514/tcp"
 
   db:
     ports: !override []
 
-  # Optional: keeps the DuckDNS record pointing at this machine.
-  #
-  # Not needed when the VM has a static public IP, which is what
-  # scripts/provision-azure.sh allocates — the record is set once by hand and
-  # never moves. It earns its place only on a dynamic address, where a
-  # deallocate/start cycle hands back a different IP.
-  #
-  # Left out of the default profile so that no DuckDNS token has to exist on
-  # the server at all. Switch it on with:
-  #   docker compose ... --profile dynamic-dns up -d
   duckdns:
     profiles: ["dynamic-dns"]
     image: alpine:3.20

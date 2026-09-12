@@ -15,7 +15,6 @@ export function Login() {
     setError(null);
     try {
       await api.post('/auth/login', { email, password });
-      // The session cookie is set; re-reading /auth/me flips the whole app over.
       await queryClient.invalidateQueries({ queryKey: ['session'] });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'sign in failed');

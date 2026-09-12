@@ -1,5 +1,3 @@
-# Base stack. Used as-is for the SaaS profile; the appliance profile layers
-# docker-compose.appliance.yml on top of this file. Same images either way.
 services:
   db:
     image: postgres:17-alpine
@@ -20,7 +18,6 @@ services:
 
   backend:
     build:
-      # Root context: the image needs both backend/ and db/migrations.
       context: .
       dockerfile: backend/Dockerfile
     restart: unless-stopped
@@ -32,8 +29,6 @@ services:
       db:
         condition: service_healthy
     volumes:
-      # Optional GeoIP databases. Absent is a supported state: the geo columns
-      # simply stay null. Populate with `make geoip`.
       - ./geoip:/app/geoip:ro
     ports:
       - "${API_PORT:-8080}:8080"
@@ -52,7 +47,6 @@ services:
         API_HOST: backend:8080
     restart: unless-stopped
     environment:
-      # Common name baked into the self-signed certificate on first boot.
       TLS_CN: ${TLS_CN:-localhost}
     depends_on:
       - backend

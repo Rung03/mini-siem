@@ -7,11 +7,6 @@ import { parseWindowsAd } from './parsers/windows-ad.js';
 import type { CanonicalEvent, Parser, ParserInput, SourceType } from './schema.js';
 import { unparsed } from './schema.js';
 
-/**
- * The registry. One parser per source type, selected by the collector the data
- * arrived on — never by anything inside the payload, which would let a sender
- * choose how it gets interpreted.
- */
 const PARSERS: Record<SourceType, Parser> = {
   fortigate: parseFortigate,
   windows_ad: parseWindowsAd,
@@ -25,16 +20,9 @@ export function parserFor(sourceType: SourceType): Parser {
   return PARSERS[sourceType];
 }
 
-/**
- * Normalize one payload. A parser that throws is contained here: the event is
- * stored raw and flagged rather than taking down the ingest path. Losing a log
- * line because of a bad regex is not an acceptable failure mode for a system
- * whose whole job is keeping log lines.
- */
 export function normalize(sourceType: SourceType, input: ParserInput): CanonicalEvent {
   try {
     const event = PARSERS[sourceType](input);
-    // A parser is allowed to be wrong about content, but not about shape.
     if (!(event.ts instanceof Date) || Number.isNaN(event.ts.getTime())) {
       event.ts = input.receivedAt;
     }

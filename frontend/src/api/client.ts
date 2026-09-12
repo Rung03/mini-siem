@@ -1,11 +1,3 @@
-/**
- * Thin API client.
- *
- * Authentication is an httpOnly cookie, so there is no token to attach here and
- * nothing for a script on the page to steal — every request just needs
- * credentials: 'include'.
- */
-
 export interface ApiUser {
   id: string;
   email: string;
@@ -13,12 +5,6 @@ export interface ApiUser {
   tenant_id: string | null;
 }
 
-/**
- * Called when the API reports that we are not signed in. A session lasts 12
- * hours, so it will expire while a tab is open; without this the page just
- * fills with "authentication required" boxes and the user has no way back to
- * the sign-in form.
- */
 let onUnauthorized: (() => void) | null = null;
 
 export function setUnauthorizedHandler(fn: () => void): void {
@@ -36,11 +22,6 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase();
-  // The API rejects any mutation that does not declare JSON — that check is
-  // what closes the CSRF hole a cookie-authenticated API would otherwise have.
-  // The header therefore depends on the method, not on whether we happen to
-  // have a body: POSTs with no body (sign out, acknowledge, rotate token) need
-  // it just as much.
   const needsJsonHeader = method !== 'GET' && method !== 'HEAD';
 
   const response = await fetch(`/api${path}`, {
@@ -58,10 +39,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       const body = (await response.json()) as { error?: string };
       if (body.error) message = body.error;
     } catch {
-      // Response had no JSON body; the status line is all we get.
     }
-    // /auth/me answers 401 as its normal signed-out reply, so it handles its
-    // own result rather than triggering a sign-out here.
     if (response.status === 401 && !path.startsWith('/auth/')) {
       onUnauthorized?.();
     }
@@ -81,10 +59,6 @@ export const api = {
   del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 };
 
-/**
- * Multipart upload. Cannot go through request(), which declares JSON — the
- * browser has to set its own multipart boundary.
- */
 export async function uploadFile(
   collectorId: string,
   file: File,
@@ -105,7 +79,6 @@ export async function uploadFile(
       const body = (await response.json()) as { error?: string };
       if (body.error) message = body.error;
     } catch {
-      // No JSON body to read.
     }
     throw new ApiError(response.status, message);
   }
@@ -113,7 +86,6 @@ export async function uploadFile(
   return (await response.json()) as { filename: string; accepted: number; unparsed: number };
 }
 
-/** Turns a filter object into a query string, dropping empty values. */
 export function qs(params: Record<string, string | number | undefined | null>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -125,9 +97,6 @@ export function qs(params: Record<string, string | number | undefined | null>): 
   return s ? `?${s}` : '';
 }
 
-// --- shapes returned by the API ------------------------------------------
-
-/** The central schema from section 3 of the assignment. */
 export interface SiemEvent {
   id: string;
   tenant_id: string;
@@ -143,7 +112,6 @@ export interface SiemEvent {
   event_action: string | null;
   action: string | null;
   event_outcome: 'success' | 'failure' | 'unknown';
-  /** 0-10, 10 loudest */
   severity: number | null;
   user_name: string | null;
   host: string | null;
@@ -161,7 +129,6 @@ export interface SiemEvent {
   cloud_account_id: string | null;
   cloud_region: string | null;
   cloud_service: string | null;
-  // Added by ingest-time enrichment; null when no GeoIP database is installed.
   src_hostname: string | null;
   geo_country_iso: string | null;
   geo_country: string | null;
@@ -176,7 +143,6 @@ export interface SiemEvent {
   parse_ok: boolean;
 }
 
-/** Section 3's source taxonomy. */
 export const SOURCES = [
   'firewall', 'network', 'api', 'crowdstrike', 'aws', 'm365', 'ad',
 ] as const;

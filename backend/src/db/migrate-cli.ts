@@ -3,7 +3,6 @@ import { runMigrations } from './migrate.js';
 import { ensurePartitions } from './partitions.js';
 import { closeAllPools } from './pool.js';
 
-/** `npm run migrate` — bootstrap roles, apply migrations, make partitions. */
 async function main() {
   await bootstrapRoles();
   console.log('[migrate] roles ready');

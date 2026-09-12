@@ -1,10 +1,4 @@
 #!/bin/sh
-# Generates a self-signed certificate on first boot if none has been mounted.
-#
-# The assignment accepts a self-signed certificate for the SaaS profile as long
-# as the procedure is written down — see docs/setup_saas.md. To use a real one,
-# mount the key and certificate over /etc/nginx/certs and this script leaves
-# them alone.
 set -e
 
 CERT_DIR=/etc/nginx/certs

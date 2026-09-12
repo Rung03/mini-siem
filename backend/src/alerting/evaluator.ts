@@ -2,19 +2,6 @@ import { config } from '../config.js';
 import { withEvaluator } from '../db/tenant.js';
 import { deliverPendingWebhooks } from './webhook.js';
 
-/**
- * The alert engine.
- *
- * Every 30 seconds each enabled rule becomes one aggregate query over its own
- * window. The rule from the README — more than five failed logins from one
- * address inside five minutes — is that query with threshold 5 and window 300.
- *
- * Re-firing is the thing worth getting right: a brute force that runs for an
- * hour would otherwise raise 120 identical alerts. Each (rule, group) is
- * therefore bucketed by the rule's suppression window, and a burst that is
- * still going updates the alert it already raised instead of making a new one.
- */
-
 export interface AlertRule {
   id: string;
   tenant_id: string;
@@ -31,7 +18,6 @@ export interface AlertRule {
   webhook_url: string | null;
 }
 
-/** Fixed mapping, so the grouping column can never come from user input. */
 const GROUP_COLUMNS: Record<AlertRule['group_by'], string> = {
   src_ip: 'host(src_ip)',
   user_name: 'user_name',
@@ -115,7 +101,6 @@ export async function evaluateRule(rule: AlertRule): Promise<number> {
   let raised = 0;
 
   for (const breach of breaches) {
-    // One alert per (rule, group) per suppression window.
     const bucket =
       rule.suppress_seconds > 0
         ? Math.floor(Date.now() / 1000 / rule.suppress_seconds)
@@ -179,7 +164,6 @@ export async function evaluateAll(): Promise<number> {
     try {
       raised += await evaluateRule(rule);
     } catch (err) {
-      // One broken rule must not stop the others from being evaluated.
       console.error(`[alerting] rule "${rule.name}" failed:`, (err as Error).message);
     }
   }

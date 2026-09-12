@@ -6,18 +6,6 @@ import { withAdmin, withApp, withOwner, withUnscopedApp } from '../src/db/tenant
 import { normalize } from '../src/normalize/index.js';
 import { insertEvents } from '../src/pipeline/writer.js';
 
-/**
- * The tests that check the README's two security claims.
- *
- * These are the ones worth reading. Everything else in the suite checks that
- * the code does what it says; these check that it still holds when the code is
- * wrong — queries here deliberately omit their WHERE clause, and deliberately
- * try to erase evidence.
- *
- * Needs a live database. Run `docker compose up -d db` first; without one the
- * suite skips rather than failing, so `npm test` stays useful offline.
- */
-
 async function databaseReachable(): Promise<boolean> {
   try {
     await bootstrapRoles();
@@ -39,10 +27,6 @@ describe.skipIf(!available)('tenant isolation is enforced by the database', () =
   let fx: Fixture;
 
   beforeAll(async () => {
-    // Fixed slugs, reused across runs. Timestamped ones would be tidier in
-    // isolation, but events are append-only and tenants cannot be cleaned up
-    // afterwards — so every run would leave another pair of tenants, and
-    // another set of partitions, behind in whatever database it ran against.
     const make = (slug: string) =>
       withAdmin(async (db) => {
         const { rows } = await db.query<{ id: string }>(
@@ -86,8 +70,6 @@ describe.skipIf(!available)('tenant isolation is enforced by the database', () =
   });
 
   it('returns only one tenant even when the query has no WHERE clause', async () => {
-    // This is the query a buggy route would write. It is not filtered, on
-    // purpose. The database is supposed to filter it anyway.
     const rows = await withApp(fx.tenantA, async (db) => {
       const result = await db.query<{ tenant_id: string; user_name: string }>(
         'SELECT tenant_id, user_name FROM events',
@@ -112,7 +94,6 @@ describe.skipIf(!available)('tenant isolation is enforced by the database', () =
   });
 
   it('returns nothing at all when no tenant is pinned', async () => {
-    // Fail closed: a forgotten set_config means zero rows, not every row.
     const rows = await withUnscopedApp(async (db) => {
       const result = await db.query('SELECT tenant_id FROM events');
       return result.rows;
@@ -171,9 +152,6 @@ describe.skipIf(!available)('logs cannot be deleted', () => {
   });
 
   it('denies DELETE on events to an administrator', async () => {
-    // The README is explicit that this holds for Admin too: if the person who
-    // administers the system can erase its logs, an attacker who takes that
-    // account can erase their own tracks.
     await expect(
       withAdmin(async (db) => {
         await db.query('DELETE FROM events');
@@ -243,9 +221,6 @@ describe.skipIf(!available)('roles have no way around row level security', () =>
   });
 
   it('grants the app role nothing on the partitions themselves', async () => {
-    // Privileges are checked on the parent when access goes through it, so the
-    // app role can query events normally — but cannot reach around it to a
-    // partition, where the parent's policies would not apply.
     const rows = await withOwner(async (db) => {
       const result = await db.query<{ relname: string }>(
         `SELECT c.relname

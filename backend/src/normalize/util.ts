@@ -2,13 +2,6 @@ import { isIP } from 'node:net';
 import type { CanonicalEvent, Outcome, ParserInput, Source, SourceType } from './schema.js';
 import { SOURCES, blankEvent } from './schema.js';
 
-/** Shared helpers for the parsers. All pure, all defensive about bad input. */
-
-/**
- * Splits `a=1 b="two words" c='three'` into a map. Fortigate and a number of
- * network appliances speak this dialect; quoting is inconsistent enough in the
- * wild that a regex beats a hand-rolled state machine here.
- */
 export function parseKeyValue(line: string): Record<string, string> {
   const out: Record<string, string> = {};
   const re = /([A-Za-z0-9_.-]+)=("([^"]*)"|'([^']*)'|([^\s]*))/g;
@@ -21,22 +14,18 @@ export function parseKeyValue(line: string): Record<string, string> {
   return out;
 }
 
-/** An IP or null. Strips a :port suffix and IPv4-mapped IPv6 prefixes. */
 export function coerceIp(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   let v = value.trim();
   if (!v || v === '-' || v.toLowerCase() === 'null') return null;
 
-  // ::ffff:203.0.113.5 → 203.0.113.5
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(v);
   if (mapped) v = mapped[1]!;
 
-  // 203.0.113.5:52344 → 203.0.113.5 (but leave bare IPv6 alone)
   if (isIP(v) === 0 && v.includes(':') && v.split(':').length === 2) {
     v = v.split(':')[0]!;
   }
 
-  // https(203.0.113.44) → 203.0.113.44, a Fortigate "ui" field habit
   const wrapped = /\(([^)]+)\)/.exec(v);
   if (isIP(v) === 0 && wrapped && isIP(wrapped[1]!.trim()) !== 0) {
     v = wrapped[1]!.trim();
@@ -45,12 +34,10 @@ export function coerceIp(value: unknown): string | null {
   return isIP(v) === 0 ? null : v;
 }
 
-/** A Date or null. Accepts ISO strings, epoch seconds and epoch milliseconds. */
 export function coerceDate(value: unknown): Date | null {
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
 
   if (typeof value === 'number' && Number.isFinite(value)) {
-    // Anything past ~1973 in seconds is still under 1e11; above that it is ms.
     const ms = value > 1e11 ? value : value * 1000;
     const d = new Date(ms);
     return Number.isNaN(d.getTime()) ? null : d;
@@ -61,7 +48,6 @@ export function coerceDate(value: unknown): Date | null {
     if (!s) return null;
     if (/^\d+$/.test(s)) return coerceDate(Number(s));
 
-    // Microsoft writes audit times without a zone but means UTC.
     const naive = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s);
     const d = new Date(naive ? `${s.replace(' ', 'T')}Z` : s);
     return Number.isNaN(d.getTime()) ? null : d;
@@ -84,14 +70,6 @@ export function coerceInt(value: unknown): number | null {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-/**
- * Severity words and numbers collapsed onto the 0-10 scale from section 3,
- * where 10 is the loudest. One column then means the same thing whichever
- * appliance produced the row.
- *
- * Note the inversion: syslog counts the other way round, with 0 meaning
- * emergency and 7 meaning debug.
- */
 const SEVERITY_WORDS: Record<string, number> = {
   emergency: 10,
   emerg: 10,
@@ -112,7 +90,6 @@ const SEVERITY_WORDS: Record<string, number> = {
   debug: 1,
 };
 
-/** Syslog numeric severity (0 loudest, 7 quietest) onto 0-10 (10 loudest). */
 export function fromSyslogSeverity(n: number | null): number | null {
   if (n === null || !Number.isFinite(n)) return null;
   const clamped = Math.max(0, Math.min(7, Math.trunc(n)));
@@ -128,11 +105,9 @@ export function normalizeSeverity(value: unknown): number | null {
 
   const n = Number(s);
   if (!Number.isFinite(n)) return null;
-  // A bare number is already on a 0-10 scale as far as we can tell.
   return Math.max(0, Math.min(10, Math.trunc(n)));
 }
 
-/** Reads nested JSON safely: pick(obj, 'userIdentity', 'userName'). */
 export function pick(obj: unknown, ...keys: string[]): unknown {
   let cur: unknown = obj;
   for (const k of keys) {
@@ -146,11 +121,6 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/**
- * Strips an RFC3164/RFC5424 wrapper, returning the priority, the host and the
- * message body. Many appliances wrap their own format inside syslog, so this
- * runs before the source-specific parser gets a look.
- */
 export interface SyslogFrame {
   facility: number | null;
   severity: number | null;
@@ -180,7 +150,6 @@ export function stripSyslogHeader(line: string): SyslogFrame {
     rest = rest.slice(pri[0].length);
   }
 
-  // RFC5424: 1 2026-09-12T09:14:22.123Z host app pid msgid sd msg
   const rfc5424 =
     /^1\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(-|\[.*?\])\s?([\s\S]*)$/.exec(rest);
   if (rfc5424) {
@@ -191,11 +160,8 @@ export function stripSyslogHeader(line: string): SyslogFrame {
     return frame;
   }
 
-  // RFC3164: Sep 12 09:14:22 host tag[pid]: msg
   const rfc3164 = /^([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([\s\S]*)$/.exec(rest);
   if (rfc3164) {
-    // No year in the format. Assume the current one, and step back if that
-    // would place the event in the future.
     const now = new Date();
     const guess = new Date(`${rfc3164[1]} ${now.getUTCFullYear()} UTC`);
     if (!Number.isNaN(guess.getTime())) {
@@ -231,27 +197,7 @@ export function tryJson(text: string): unknown | undefined {
   }
 }
 
-
-// ---------------------------------------------------------------------------
-// The common envelope
-// ---------------------------------------------------------------------------
-
-/**
- * Several of the sample payloads in the assignment arrive already half
- * normalized: a flat object carrying `@timestamp`, `source`, `event_type` and
- * friends, rather than the vendor's own wire format. CrowdStrike, AWS, M365 and
- * AD all have a sample in that shape.
- *
- * Rather than teach each parser the same dialect five times, every JSON parser
- * tries this first and falls back to the real vendor format. That is also what
- * makes a simulator script useful: anything can post this shape and have it
- * land correctly, whichever collector it came in on.
- */
-
 const ACTION_BY_KEYWORD: [RegExp, string][] = [
-  // Vendors spell the same two verbs a dozen ways: UserLoggedIn, logon_success,
-  // SignedOut, user_authenticate. Match the stem rather than a literal word —
-  // "UserLoggedIn" does not contain the substring "login".
   [/logg?ed[\s_-]*out|log[\s_-]*off|sign(?:ed)?[\s_-]*out|logout/i, 'logout'],
   [/logg?ed[\s_-]*in|log[\s_-]*on|sign(?:ed)?[\s_-]*in|login|authenticat/i, 'login'],
   [/create|add|provision/i, 'create'],
@@ -284,7 +230,6 @@ function asSource(value: unknown): Source | null {
   return (SOURCES as readonly string[]).includes(s) ? (s as Source) : null;
 }
 
-/** True when the payload looks like the shape described above. */
 export function looksLikeEnvelope(json: unknown): boolean {
   if (!isPlainObject(json)) return false;
   const hasTime = '@timestamp' in json;
@@ -318,8 +263,6 @@ export function parseEnvelope(
     : event.action === 'alert' ? 'detection'
     : 'audit';
 
-  // Section 3 puts severity on 0-10. A payload that already speaks that scale
-  // is taken at face value; anything else goes through the word mapping.
   const rawSeverity = json.severity;
   event.severity =
     typeof rawSeverity === 'number'
@@ -361,8 +304,6 @@ export function parseEnvelope(
     .join(' ');
   event.message = coerceString(json.message ?? json.msg) ?? (described || null);
 
-  // Anything the schema has no column for, plus a couple of fields that are
-  // deliberately not trusted for routing.
   const claimed = coerceString(json.tenant);
   const known = new Set([
     '@timestamp', 'timestamp', 'time', 'tenant', 'source', 'vendor', 'product',
@@ -378,7 +319,6 @@ export function parseEnvelope(
     if (!known.has(k)) event.attrs[k] = v;
   }
   if (claimed) {
-    // Recorded, never acted on: the collector decides which tenant this is.
     event.attrs.claimed_tenant = claimed;
   }
 

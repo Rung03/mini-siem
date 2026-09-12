@@ -1,15 +1,6 @@
 import { config } from '../config.js';
 import { withOwner } from './tenant.js';
 
-/**
- * Partition maintenance. The SQL functions do the work (see 003_functions.sql);
- * this is the scheduling around them.
- *
- * Dropping a whole day partition is the only way event data ever leaves this
- * system. There is no DELETE statement against events anywhere in the codebase,
- * and no role has been granted the privilege to run one.
- */
-
 export async function ensurePartitions(daysAhead = config.retention.partitionDaysAhead) {
   return withOwner(async (db) => {
     const { rows } = await db.query<{ ensure_partitions: string }>(
@@ -30,12 +21,6 @@ export async function dropOldPartitions(keepDays = config.retention.days) {
   });
 }
 
-/**
- * Events whose day partition never existed land in the catch-all and are not
- * removed by dropping a table, so retention deletes them explicitly. This is
- * the only DELETE against events anywhere, it runs as the owner during
- * maintenance, and no application role has the privilege to run it.
- */
 export async function purgeBackfill(keepDays = config.retention.days): Promise<number> {
   return withOwner(async (db) => {
     const { rows } = await db.query<{ purge_backfill_partition: number }>(
@@ -55,10 +40,6 @@ export async function purgeExpiredSessions(): Promise<number> {
   });
 }
 
-/**
- * One maintenance pass: make sure upcoming days exist, drop anything past the
- * retention horizon, and clear out dead sessions.
- */
 export async function runMaintenance(): Promise<void> {
   const created = await ensurePartitions();
   const dropped = await dropOldPartitions();

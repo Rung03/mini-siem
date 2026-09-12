@@ -54,11 +54,6 @@ export function alertsRouter(): Router {
     }),
   );
 
-  /**
-   * Acknowledge. The README gives this to Viewers for their own tenant, and
-   * the RLS UPDATE policy on alerts is what confines it — a Viewer's
-   * connection cannot see, let alone update, another tenant's row.
-   */
   router.post(
     '/alerts/:id/ack',
     requireAuth,
@@ -90,8 +85,6 @@ export function alertsRouter(): Router {
       });
 
       if (!updated) {
-        // Either it does not exist, it belongs to someone else, or it was
-        // already acknowledged. All three look the same from here on purpose.
         res.status(404).json({ error: 'no open alert with that id' });
         return;
       }

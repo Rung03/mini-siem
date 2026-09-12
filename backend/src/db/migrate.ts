@@ -1,22 +1,15 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checksum, compareChecksum } from './checksums.js';
 import { pool } from './pool.js';
-
-/**
- * A deliberately small migration runner: numbered .sql files, applied once, in
- * order, each inside its own transaction, as the owner role. Applied files are
- * checksummed so an edit to a migration that already ran is reported rather
- * than silently ignored.
- */
 
 export interface MigrationResult {
   applied: string[];
   alreadyApplied: string[];
+  reconciled: string[];
 }
 
-/** Walk up from this module until a db/migrations directory turns up. */
 function findMigrationsDir(): string {
   if (process.env.MIGRATIONS_DIR) return process.env.MIGRATIONS_DIR;
 
@@ -31,11 +24,6 @@ function findMigrationsDir(): string {
   throw new Error('could not locate db/migrations (set MIGRATIONS_DIR)');
 }
 
-function checksum(sql: string): string {
-  // Normalise line endings so a Windows checkout and a Linux container agree.
-  return createHash('sha256').update(sql.replace(/\r\n/g, '\n')).digest('hex');
-}
-
 export async function runMigrations(): Promise<MigrationResult> {
   const dir = findMigrationsDir();
   const files = readdirSync(dir)
@@ -45,6 +33,7 @@ export async function runMigrations(): Promise<MigrationResult> {
   const client = await pool('owner').connect();
   const applied: string[] = [];
   const alreadyApplied: string[] = [];
+  const reconciled: string[] = [];
 
   try {
     await client.query(`
@@ -66,12 +55,20 @@ export async function runMigrations(): Promise<MigrationResult> {
       const previous = seen.get(file);
 
       if (previous !== undefined) {
-        if (previous !== sum) {
+        const verdict = compareChecksum(file, previous, sum);
+        if (verdict === 'mismatch') {
           throw new Error(
             `migration ${file} was modified after it was applied ` +
               `(recorded ${previous.slice(0, 12)}, now ${sum.slice(0, 12)}). ` +
               'Add a new migration instead of editing an applied one.',
           );
+        }
+        if (verdict === 'earlier-equivalent') {
+          await client.query('UPDATE schema_migrations SET checksum = $1 WHERE version = $2', [
+            sum,
+            file,
+          ]);
+          reconciled.push(file);
         }
         alreadyApplied.push(file);
         continue;
@@ -96,5 +93,9 @@ export async function runMigrations(): Promise<MigrationResult> {
     client.release();
   }
 
-  return { applied, alreadyApplied };
+  if (reconciled.length > 0) {
+    console.log(`[migrate] updated recorded checksum after comment-only change: ${reconciled.join(', ')}`);
+  }
+
+  return { applied, alreadyApplied, reconciled };
 }

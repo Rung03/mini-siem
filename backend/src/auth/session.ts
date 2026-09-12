@@ -4,16 +4,6 @@ import { config } from '../config.js';
 import { withUnscopedApp } from '../db/tenant.js';
 import type { Actor, ActorRole } from '../db/tenant.js';
 
-/**
- * Server-side sessions.
- *
- * The cookie carries a random opaque token; the database stores only its
- * SHA-256. A dump of the sessions table therefore does not let anyone
- * impersonate a live user, and revocation is a DELETE rather than a wait for
- * an expiry claim to lapse — which matters for a tool whose own audit trail is
- * supposed to be trustworthy.
- */
-
 export const COOKIE_NAME = 'siem_session';
 
 function hashToken(token: string): string {
@@ -67,9 +57,6 @@ export async function revokeSession(token: string): Promise<void> {
 export function setSessionCookie(res: Response, token: string, expiresAt: Date): void {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    // Strict rather than Lax: nothing in this application is meant to be
-    // reached by following a link from somewhere else, and Strict is what
-    // makes the CSRF story a one-liner.
     sameSite: 'strict',
     secure: config.api.cookieSecure,
     expires: expiresAt,
@@ -86,7 +73,6 @@ export function clearSessionCookie(res: Response): void {
   });
 }
 
-/** Reads the session cookie without pulling in a cookie-parser dependency. */
 export function readSessionCookie(header: string | undefined): string {
   if (!header) return '';
   for (const part of header.split(';')) {

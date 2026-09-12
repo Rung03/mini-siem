@@ -12,16 +12,6 @@ import {
   tryJson,
 } from '../util.js';
 
-/**
- * Windows Security log, as forwarded by NXLog/WinLogbeat (JSON) or by an agent
- * that ships the rendered text.
- *
- * The three event ids that carry the login story:
- *   4624  an account was successfully logged on
- *   4625  an account failed to log on
- *   4634  an account was logged off
- */
-
 const ACTIONS: Record<number, { action: string; outcome: Outcome; type: string }> = {
   4624: { action: 'login', outcome: 'success', type: 'LogonSuccess' },
   4625: { action: 'login', outcome: 'failure', type: 'LogonFailed' },
@@ -34,7 +24,6 @@ const ACTIONS: Record<number, { action: string; outcome: Outcome; type: string }
   4726: { action: 'delete', outcome: 'success', type: 'UserDeleted' },
 };
 
-/** The sub-status codes an analyst actually wants to see spelled out. */
 const STATUS_REASONS: Record<string, string> = {
   '0xc0000064': 'user name does not exist',
   '0xc000006a': 'wrong password',
@@ -59,14 +48,11 @@ const LOGON_TYPES: Record<number, string> = {
   11: 'cached-interactive',
 };
 
-/** Pulls "Account Name:  jsmith" style pairs out of a rendered event body. */
 function parseRenderedFields(text: string): Record<string, string> {
   const out: Record<string, string> = {};
   const re = /^[\t ]*([A-Za-z][A-Za-z ]+?):[\t ]+(.+?)[\t ]*$/gm;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    // The rendered form repeats "Account Name" for subject and target; the
-    // later occurrence is the account that actually tried to log on.
     out[m[1]!.trim()] = m[2]!.trim();
   }
   return out;
@@ -89,9 +75,6 @@ export const parseWindowsAd: Parser = (input): CanonicalEvent => {
     const o = json;
     eventId = coerceInt(o.EventID ?? o.event_id ?? o.EventId);
 
-    // The assignment's AD sample is the half-normalized shape rather than a
-    // Windows event record; take its fields first, then overlay what the
-    // event id tells us.
     if (looksLikeEnvelope(o)) {
       const base = parseEnvelope('windows_ad', input, o);
       base.source = 'ad';
@@ -179,13 +162,11 @@ export const parseWindowsAd: Parser = (input): CanonicalEvent => {
     if (reason) event.attrs.reason = reason;
   }
 
-  // "jsmith" out of "CORP\jsmith", keeping the domain separately.
   if (event.userName?.includes('\\')) {
     const [domain, name] = event.userName.split('\\');
     event.attrs.domain = domain;
     event.userName = name ?? event.userName;
   }
-  // Machine accounts end in $ and are noise in a login dashboard.
   if (event.userName?.endsWith('$')) event.attrs.machine_account = true;
   if (event.userName === '-') event.userName = null;
 

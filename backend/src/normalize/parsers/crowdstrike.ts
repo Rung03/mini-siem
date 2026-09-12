@@ -12,17 +12,6 @@ import {
   tryJson,
 } from '../util.js';
 
-/**
- * CrowdStrike Falcon streaming API events. Two shapes matter here:
- *
- *   UserActivityAuditEvent — console logins, which belong to the login story
- *   DetectionSummaryEvent  — endpoint detections, which this system displays
- *                            rather than produces
- *
- * Both arrive wrapped as {"metadata":{...},"event":{...}}.
- */
-
-/** Falcon's severity words onto section 3's 0-10 scale. */
 const SEVERITY_BY_NAME: Record<string, number> = {
   critical: 10,
   high: 8,
@@ -42,7 +31,6 @@ function auditOutcome(event: Record<string, unknown>): Outcome {
   return 'unknown';
 }
 
-/** AuditKeyValues is a list of {Key, ValueString}; flatten it. */
 function auditKeyValues(event: Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {};
   const list = event.AuditKeyValues;
@@ -62,13 +50,11 @@ export const parseCrowdstrike: Parser = (input): CanonicalEvent => {
     return unparsed('crowdstrike', input, 'payload is not a JSON object');
   }
 
-  // The assignment's CrowdStrike sample is the half-normalized shape.
   if (looksLikeEnvelope(json)) {
     const base = parseEnvelope('crowdstrike', input, json);
     base.source = 'crowdstrike';
     base.vendor = 'CrowdStrike';
     base.product = 'Falcon';
-    // A detection is not a login; it is the endpoint agent reporting a find.
     if ((base.eventType ?? '').toLowerCase().includes('malware') || base.action === 'alert') {
       base.eventCategory = 'detection';
     }

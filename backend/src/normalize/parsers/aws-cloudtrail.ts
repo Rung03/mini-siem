@@ -12,19 +12,6 @@ import {
   tryJson,
 } from '../util.js';
 
-/**
- * AWS CloudTrail records. The login story lives in ConsoleLogin:
- *
- *   {"eventTime":"2026-09-12T09:14:22Z","eventSource":"signin.amazonaws.com",
- *    "eventName":"ConsoleLogin","sourceIPAddress":"203.0.113.44",
- *    "userIdentity":{"type":"IAMUser","userName":"deploy-bot"},
- *    "responseElements":{"ConsoleLogin":"Failure"},
- *    "errorMessage":"Failed authentication"}
- *
- * Batch exports wrap records in {"Records":[...]}; unwrapping that is the
- * ingest layer's job (see ingest/http.ts), so here one object is one event.
- */
-
 const AUTH_EVENTS = new Set([
   'consolelogin',
   'assumerole',
@@ -34,7 +21,6 @@ const AUTH_EVENTS = new Set([
   'checkmfa',
 ]);
 
-/** CloudTrail event names onto section 3's action vocabulary. */
 function actionFor(eventName: string, isAuth: boolean): string {
   if (isAuth) return 'login';
   const n = eventName.toLowerCase();
@@ -53,7 +39,6 @@ function outcomeOf(o: Record<string, unknown>): Outcome {
   return 'unknown';
 }
 
-/** CloudTrail identifies principals half a dozen ways; pick the readable one. */
 function principalOf(o: Record<string, unknown>): string | null {
   return (
     coerceString(pick(o, 'userIdentity', 'userName')) ??
@@ -71,8 +56,6 @@ export const parseAwsCloudtrail: Parser = (input): CanonicalEvent => {
     return unparsed('aws_cloudtrail', input, 'payload is not a JSON object');
   }
 
-  // The assignment's AWS sample is the half-normalized shape, with the real
-  // CloudTrail record nested under "raw".
   if (looksLikeEnvelope(json)) {
     const base = parseEnvelope('aws_cloudtrail', input, json);
     base.source = 'aws';
@@ -112,8 +95,6 @@ export const parseAwsCloudtrail: Parser = (input): CanonicalEvent => {
   event.cloudRegion = coerceString(json.awsRegion);
   event.cloudService = coerceString(json.eventSource)?.replace(/\.amazonaws\.com$/, '') ?? null;
 
-  // sourceIPAddress carries an AWS service name rather than an address when
-  // the call came from inside AWS, which coerceIp rejects — as it should.
   event.srcIp = coerceIp(json.sourceIPAddress);
 
   const mfa = coerceString(pick(json, 'additionalEventData', 'MFAUsed'));

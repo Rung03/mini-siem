@@ -58,8 +58,6 @@ export function Admin({ user }: { user: ApiUser }) {
   );
 }
 
-// --- collectors -----------------------------------------------------------
-
 function Collectors() {
   const queryClient = useQueryClient();
   const tenants = useTenants(true);
@@ -309,8 +307,6 @@ function FileUpload({ collectors }: { collectors: Collector[] }) {
   );
 }
 
-// --- rules ----------------------------------------------------------------
-
 function Rules() {
   const queryClient = useQueryClient();
   const tenantNames = useTenantNames();
@@ -371,8 +367,6 @@ function Rules() {
     </div>
   );
 }
-
-// --- users ----------------------------------------------------------------
 
 interface AdminUser {
   id: string;
@@ -492,8 +486,6 @@ function Users({ currentUserId }: { currentUserId: string }) {
                     </span>
                   </td>
                   <td>
-                    {/* Deactivating yourself signs you out, and if you are the
-                        only admin it leaves nobody able to sign back in. */}
                     <button
                       onClick={() => toggle.mutate(u)}
                       disabled={u.id === currentUserId}
@@ -511,8 +503,6 @@ function Users({ currentUserId }: { currentUserId: string }) {
     </>
   );
 }
-
-// --- tenants --------------------------------------------------------------
 
 function Tenants() {
   const queryClient = useQueryClient();
@@ -575,8 +565,6 @@ function Tenants() {
   );
 }
 
-// --- audit ----------------------------------------------------------------
-
 function Audit() {
   const list = useQuery({
     queryKey: ['audit'],
@@ -616,8 +604,6 @@ function Audit() {
     </div>
   );
 }
-
-// --- storage --------------------------------------------------------------
 
 interface Partition { day_partition: string; subpartitions: number }
 interface Drop {

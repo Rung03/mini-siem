@@ -6,11 +6,6 @@ import type { Actor } from '../../db/tenant.js';
 import { SOURCES, SOURCE_TYPES } from '../../normalize/schema.js';
 import { HttpError, handler, parse, resolveRange, tenantScope } from '../util.js';
 
-/**
- * Event search. One query shape covers every source, which is the entire point
- * of normalizing on the way in.
- */
-
 const query = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
@@ -27,7 +22,6 @@ const query = z.object({
   category: z.string().max(64).optional(),
   q: z.string().max(500).optional(),
   limit: z.coerce.number().int().min(1).max(500).default(100),
-  /** Keyset cursor from a previous page: "<iso ts>|<uuid>". */
   cursor: z.string().max(120).optional(),
 });
 
@@ -38,13 +32,6 @@ export interface FilterSql {
   params: unknown[];
 }
 
-/**
- * Builds the WHERE clause shared by search and the dashboard aggregates.
- *
- * Everything is a bind parameter. The only strings that reach the SQL text are
- * column names chosen from fixed lists in this file — never anything a caller
- * supplied.
- */
 export function buildFilter(
   actor: Actor,
   input: EventQuery,
@@ -75,7 +62,6 @@ export function buildFilter(
   if (input.user) clauses.push(`user_name ILIKE ${push(`%${input.user}%`)}`);
 
   if (input.ip) {
-    // Accept a bare address or a CIDR, so "show me 203.0.113.0/24" works.
     const isCidr = input.ip.includes('/');
     clauses.push(
       isCidr ? `src_ip << ${push(input.ip)}::inet` : `src_ip = ${push(input.ip)}::inet`,
@@ -156,8 +142,6 @@ export function eventsRouter(): Router {
     }),
   );
 
-  // The raw payload, fetched on demand. Search results carry the normalized
-  // fields; the original text is a click away rather than in every row.
   router.get(
     '/events/:id/raw',
     requireAuth,
@@ -167,8 +151,6 @@ export function eventsRouter(): Router {
       const ts = parse(z.string().datetime().optional(), req.query.ts);
 
       const row = await withActor(actor, async (db) => {
-        // ts is optional but lets Postgres prune to a single day partition
-        // instead of scanning every one of them.
         const params: unknown[] = [id];
         let extra = '';
         if (ts) {

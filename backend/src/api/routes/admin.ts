@@ -6,14 +6,6 @@ import { requireAdmin, requireAuth } from '../../auth/rbac.js';
 import { withActor, withAdmin, withOwner } from '../../db/tenant.js';
 import { handler, parse, tenantScope } from '../util.js';
 
-/**
- * Tenants, users, and the audit trail — the Admin screens.
- *
- * Reading the audit trail is Admin-only; writing to it happens everywhere. And
- * note there is no delete endpoint below for audit entries, because there is no
- * privilege that would let one work.
- */
-
 const tenantBody = z.object({
   slug: z
     .string()
@@ -42,8 +34,6 @@ const userUpdate = z.object({
 
 export function adminRouter(): Router {
   const router = Router();
-
-  // --- tenants ------------------------------------------------------------
 
   router.get(
     '/tenants',
@@ -91,8 +81,6 @@ export function adminRouter(): Router {
         return row;
       });
 
-      // A brand new tenant needs today's partition before it can receive
-      // anything, and the nightly job may be hours away.
       await withOwner(async (db) => {
         await db.query('SELECT ensure_partitions($1)', [2]);
       });
@@ -100,8 +88,6 @@ export function adminRouter(): Router {
       res.status(201).json({ tenant });
     }),
   );
-
-  // --- users --------------------------------------------------------------
 
   router.get(
     '/users',
@@ -189,8 +175,6 @@ export function adminRouter(): Router {
             targetType: 'user',
             targetId: id,
             tenantId: (row.tenant_id as string | null) ?? null,
-            // The new password is not in the details, obviously; that it was
-            // changed, and by whom, is the part that matters.
             details: {
               active: body.active,
               password_changed: body.password !== undefined,
@@ -208,8 +192,6 @@ export function adminRouter(): Router {
       res.json({ user });
     }),
   );
-
-  // --- audit trail --------------------------------------------------------
 
   router.get(
     '/audit',
@@ -250,7 +232,6 @@ export function adminRouter(): Router {
     }),
   );
 
-  /** Ingest that never made it to a row: unknown senders, oversized batches. */
   router.get(
     '/ingest-drops',
     requireAdmin,
@@ -266,7 +247,6 @@ export function adminRouter(): Router {
     }),
   );
 
-  /** Storage layout, so the retention promise is visible rather than asserted. */
   router.get(
     '/partitions',
     requireAdmin,

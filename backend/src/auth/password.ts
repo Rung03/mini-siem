@@ -8,17 +8,6 @@ const scrypt = promisify(scryptCb) as (
   options: { N: number; r: number; p: number; maxmem: number },
 ) => Promise<Buffer>;
 
-/**
- * Password hashing with scrypt from node:crypto.
- *
- * Deliberately not argon2 or bcrypt: those need a native build step, and an
- * appliance that has to compile a C addon on the customer's machine is an
- * appliance that fails to install. scrypt is memory-hard, in the standard
- * library, and available everywhere Node is.
- *
- * Stored form: scrypt$N$r$p$<salt-b64>$<hash-b64>
- */
-
 const PARAMS = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 const KEY_LENGTH = 32;
 const SALT_LENGTH = 16;
@@ -62,11 +51,6 @@ export async function verifyPassword(password: string, stored: string): Promise<
   }
 }
 
-/**
- * Burns roughly the same time as a real verification. Called when the email is
- * unknown, so that a wrong address and a wrong password are indistinguishable
- * from the outside.
- */
 export async function dummyVerify(): Promise<void> {
   await scrypt('not-a-real-password', randomBytes(SALT_LENGTH), KEY_LENGTH, PARAMS).catch(
     () => undefined,

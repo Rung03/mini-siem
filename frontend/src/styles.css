@@ -7,9 +7,6 @@
   --text: #18181b;
   --muted: #71717a;
   --faint: #a1a1aa;
-  /* Navigation sits on white with nothing else competing for attention, so it
-     reads as washed out at --muted. One step darker keeps it quiet without
-     looking disabled. */
   --nav: #3f3f46;
   --accent: #18181b;
   --success: #15803d;
@@ -33,8 +30,6 @@ body {
 }
 
 a { color: inherit; text-decoration: none; }
-
-/* --- controls ----------------------------------------------------------- */
 
 button {
   font: inherit;
@@ -72,8 +67,6 @@ input:focus, select:focus {
 }
 input::placeholder { color: var(--faint); }
 
-/* --- layout ------------------------------------------------------------- */
-
 .app { display: flex; min-height: 100vh; }
 
 .sidebar {
@@ -84,8 +77,6 @@ input::placeholder { color: var(--faint); }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  /* Stays put while the main column scrolls — the tables here run long, and
-     the nav (and Sign out) should not scroll off with them. */
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -140,8 +131,6 @@ input::placeholder { color: var(--faint); }
   letter-spacing: -0.01em;
 }
 
-/* --- cards -------------------------------------------------------------- */
-
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -179,8 +168,6 @@ input::placeholder { color: var(--faint); }
   gap: 12px;
   margin-top: 12px;
 }
-
-/* --- tables ------------------------------------------------------------- */
 
 .table-wrap { overflow-x: auto; }
 
@@ -222,8 +209,6 @@ td.mono, .mono {
 .pill.failure { color: var(--failure); border-color: #fecaca; background: #fef2f2; }
 .pill.open { color: var(--warn); border-color: #fde68a; background: #fffbeb; }
 
-/* --- filters ------------------------------------------------------------ */
-
 .filters {
   display: flex;
   gap: 10px;
@@ -248,8 +233,6 @@ td.mono, .mono {
   color: var(--text);
   font-weight: 500;
 }
-
-/* --- misc --------------------------------------------------------------- */
 
 .muted { color: var(--muted); }
 .faint { color: var(--faint); }

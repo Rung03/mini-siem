@@ -17,8 +17,6 @@ export function createApp(): Express {
   const app = express();
 
   app.disable('x-powered-by');
-  // Trust exactly as many hops as are actually deployed — see
-  // config.api.trustProxyHops.
   app.set('trust proxy', config.api.trustProxyHops);
 
   app.use((_req, res, next) => {
@@ -28,8 +26,6 @@ export function createApp(): Express {
     next();
   });
 
-  // Liveness. Deliberately unauthenticated and deliberately boring: it says
-  // the process is up, not what is in it.
   app.get('/api/health', (_req, res) => {
     res.json({
       status: 'ok',
@@ -38,9 +34,6 @@ export function createApp(): Express {
     });
   });
 
-  // The machine-to-machine ingest channel. Mounted before the JSON body parser
-  // because it takes its body as raw text whatever content type is claimed —
-  // that is what lets each event keep its payload byte for byte.
   app.use('/', ingestRouter());
 
   app.use(express.json({ limit: '1mb' }));
@@ -56,8 +49,6 @@ export function createApp(): Express {
   api.use(collectorsRouter());
   api.use(adminRouter());
 
-  // Batch upload of historical exports. Multipart, so it sits outside the
-  // JSON body parser and handles its own stream.
   api.post('/ingest/file', requireAuth, (req, res) => {
     void handleUpload(req, res);
   });

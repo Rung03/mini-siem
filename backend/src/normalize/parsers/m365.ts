@@ -10,15 +10,6 @@ import {
   tryJson,
 } from '../util.js';
 
-/**
- * Microsoft 365 unified audit log (Office 365 Management Activity API):
- *
- *   {"CreationTime":"2026-09-12T09:14:22","Operation":"UserLoginFailed",
- *    "Workload":"AzureActiveDirectory","ResultStatus":"Failed",
- *    "UserId":"jsmith@contoso.com","ClientIP":"203.0.113.44",
- *    "LogonError":"InvalidUserNameOrPassword"}
- */
-
 const LOGIN_OPERATIONS = new Set([
   'userloggedin',
   'userloginfailed',
@@ -26,7 +17,6 @@ const LOGIN_OPERATIONS = new Set([
   'signinevent',
 ]);
 
-/** The AAD error strings that come up most in a brute force. */
 const LOGON_ERRORS: Record<string, string> = {
   invalidusernameorpassword: 'invalid user name or password',
   usernotfound: 'user not found',
@@ -56,7 +46,6 @@ export const parseM365: Parser = (input): CanonicalEvent => {
     return unparsed('m365', input, 'payload is not a JSON object');
   }
 
-  // The assignment's M365 sample uses the half-normalized shape.
   if (looksLikeEnvelope(json)) {
     const base = parseEnvelope('m365', input, json);
     base.source = 'm365';
@@ -88,8 +77,6 @@ export const parseM365: Parser = (input): CanonicalEvent => {
   event.eventCategory = isLogin ? 'authentication' : 'audit';
   event.severity = outcome === 'failure' ? 6 : 2;
 
-  // The audit log uses the UPN; the local part is what lines up with the
-  // account names coming from Active Directory.
   event.userName = coerceString(json.UserId ?? json.UserPrincipalName);
   event.srcIp = coerceIp(json.ClientIP ?? json.ActorIpAddress ?? json.ClientIPAddress);
   event.host = coerceString(json.OrganizationName) ?? coerceString(json.Workload);

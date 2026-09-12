@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-#
-# One-command start, for machines without `make` (Windows included).
-# Everything here has a Makefile equivalent — see `make help`.
-#
-#   ./run.sh              start the SaaS profile and load demo data
-#   ./run.sh appliance    start the appliance profile instead
-#   ./run.sh down         stop, keeping data
-#   ./run.sh clean        stop and delete all data
 set -euo pipefail
 cd "$(dirname "$0")"
 

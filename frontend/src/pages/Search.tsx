@@ -19,7 +19,6 @@ const SOURCE_TYPES = [
   'generic',
 ];
 
-/** Search across every source at once. */
 export function Search({ user }: { user: ApiUser }) {
   const { key, setKey, from, to } = useTimeRange('24h');
   const [tenant, setTenant] = useState('');
@@ -31,7 +30,6 @@ export function Search({ user }: { user: ApiUser }) {
   const [userName, setUserName] = useState('');
   const [ip, setIp] = useState('');
   const [text, setText] = useState('');
-  // Applied only on submit, so typing does not fire a query per keystroke.
   const [applied, setApplied] = useState(0);
 
   const params = {
