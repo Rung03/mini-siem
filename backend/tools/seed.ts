@@ -232,9 +232,30 @@ function internalIp(spec: TenantSpec): string {
   return `${spec.subnet}.${2 + Math.floor(Math.random() * 250)}`;
 }
 
+/**
+ * Addresses the "external" failures come from.
+ *
+ * The RFC5737 documentation ranges are the correct thing to put in synthetic
+ * logs, but they deliberately geolocate to nothing and resolve to nothing —
+ * which left the enrichment columns empty for the entire demo dataset and made
+ * a working feature look broken.
+ *
+ * So the list mixes both: documentation ranges for most of the noise, and a
+ * handful of well-known public resolvers, which are public infrastructure
+ * rather than anybody's private estate, and which do carry geo and PTR data.
+ */
 const EXTERNAL_IPS = [
+  // Documentation ranges — no geo, no PTR, by design.
   '203.0.113.12', '203.0.113.44', '198.51.100.23',
   '198.51.100.77', '192.0.2.31', '192.0.2.155',
+  // Public resolvers — these light up the geo and hostname columns.
+  '8.8.8.8',          // dns.google, US
+  '1.1.1.1',          // one.one.one.one, AU
+  '9.9.9.9',          // dns9.quad9.net, CH
+  '208.67.222.222',   // resolver1.opendns.com, US
+  '77.88.8.8',        // Yandex, RU
+  '168.95.1.1',       // HiNet, TW
+  '114.114.114.114',  // 114DNS, CN
 ];
 
 // ---------------------------------------------------------------------------
