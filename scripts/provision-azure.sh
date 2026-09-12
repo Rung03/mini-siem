@@ -17,7 +17,12 @@ set -euo pipefail
 RG="${RG:-mini-siem-rg}"
 LOCATION="${LOCATION:-southeastasia}"
 VM="${VM:-mini-siem}"
-SIZE="${SIZE:-Standard_B2ms}"
+# B2ms is blocked for Azure for Students subscriptions ("NotAvailableForSubscription"),
+# so the default is the v2 equivalent: same 2 vCPU / 8 GB, newer silicon, cheaper.
+# If a size turns out to be unavailable the script walks down this list rather
+# than failing and making you look the alternatives up yourself.
+SIZE="${SIZE:-Standard_B2as_v2}"
+SIZE_FALLBACKS="${SIZE_FALLBACKS:-Standard_B2s_v2 Standard_B2ms Standard_B2als_v2 Standard_B2ls_v2}"
 IMAGE="${IMAGE:-Ubuntu2204}"
 ADMIN="${ADMIN:-azureuser}"
 DISK_GB="${DISK_GB:-40}"

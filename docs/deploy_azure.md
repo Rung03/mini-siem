@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| VM | Azure **Standard_B2ms** (2 vCPU / 8 GB) ที่ **Southeast Asia** |
+| VM | Azure **Standard_B2as_v2** (2 vCPU / 8 GB) ที่ **Southeast Asia** |
 | โดเมน | DuckDNS (ฟรี) เช่น `mysiem.duckdns.org` |
 | TLS | **Caddy** ขอและต่ออายุ Let's Encrypt อัตโนมัติ (ACME HTTP-01) |
-| ค่าใช้จ่าย | B2ms ประมาณ **$60–70/เดือน** ถ้าเปิดทิ้งไว้ — คิดเป็นรายชั่วโมง **ลบทิ้งเมื่อเดโมเสร็จ** |
+| ค่าใช้จ่าย | **$0.0944/ชม.** (~$69/เดือน ถ้าเปิดค้าง) — เดโม 3 วันราว **$6.80** สั่ง `az vm deallocate` ตอนไม่ใช้เพื่อหยุดค่า compute |
 
 ---
 
@@ -25,7 +25,7 @@
 ./scripts/provision-azure.sh
 ```
 
-สคริปต์จะสร้าง resource group, public IP แบบ **static**, VM B2ms พร้อม
+สคริปต์จะสร้าง resource group, public IP แบบ **static**, VM B2as_v2 พร้อม
 cloud-init ที่ลง Docker ให้ และเปิด NSG เฉพาะพอร์ตที่จำเป็น
 
 | พอร์ต | เปิดให้ใคร | ทำไม |
@@ -200,7 +200,10 @@ git pull && $C up -d --build   # อัปเกรด
 az group delete --name mini-siem-rg --yes --no-wait
 ```
 
-**อย่าลืมขั้นนี้** — B2ms คิดเงินต่อชั่วโมงตราบใดที่ VM ยังอยู่
+**อย่าลืมขั้นนี้** — VM คิดเงินต่อชั่วโมงตราบใดที่ยังไม่ถูกลบ
+
+ถ้าแค่พักไว้ก่อน (เก็บข้อมูลไว้) ใช้ `az vm deallocate -g mini-siem-rg -n mini-siem`
+จะหยุดค่า compute เหลือแต่ค่าดิสก์
 
 ---
 
