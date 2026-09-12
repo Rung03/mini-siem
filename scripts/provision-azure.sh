@@ -15,11 +15,12 @@
 set -euo pipefail
 
 RG="${RG:-mini-siem-rg}"
-# Southeast Asia would be the obvious choice on latency from Thailand (~30ms
-# against ~85ms), but every 2 vCPU / 8 GB SKU there comes back
-# NotAvailableForSubscription on Azure for Students — B2ms, B2s_v2, B2as_v2,
-# D2s_v5 and D2as_v5 were all refused. Korea Central allows them.
-LOCATION="${LOCATION:-koreacentral}"
+# Southeast Asia would be the obvious choice on latency from Thailand (~30ms),
+# but every 2 vCPU / 8 GB SKU there comes back NotAvailableForSubscription on
+# Azure for Students — B2ms, B2s_v2, B2as_v2, D2s_v5 and D2as_v5 all refused.
+# East Asia allows all of them and is the next closest at ~45ms; Korea Central
+# also works but sits at ~85ms.
+LOCATION="${LOCATION:-eastasia}"
 VM="${VM:-mini-siem}"
 # B2ms is blocked for Azure for Students subscriptions ("NotAvailableForSubscription"),
 # so the default is the v2 equivalent: same 2 vCPU / 8 GB, newer silicon, cheaper.

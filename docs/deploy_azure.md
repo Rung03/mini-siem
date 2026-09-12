@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| VM | Azure **Standard_B2as_v2** (2 vCPU / 8 GB) ที่ **Korea Central** |
+| VM | Azure **Standard_B2as_v2** (2 vCPU / 8 GB) ที่ **East Asia** |
 | โดเมน | DuckDNS (ฟรี) เช่น `mysiem.duckdns.org` |
 | TLS | **Caddy** ขอและต่ออายุ Let's Encrypt อัตโนมัติ (ACME HTTP-01) |
 | ค่าใช้จ่าย | **$0.0936/ชม.** (~$68/เดือน ถ้าเปิดค้าง) — เดโม 3 วันราว **$6.74** สั่ง `az vm deallocate` ตอนไม่ใช้เพื่อหยุดค่า compute |
@@ -21,7 +21,7 @@
 ## 0. สิ่งที่ต้องมีก่อน
 
 - Azure subscription + [Azure CLI](https://aka.ms/azure-cli) แล้ว `az login`
-- บัญชี [DuckDNS](https://www.duckdns.org) (ล็อกอินด้วย GitHub/Google ได้) จดชื่อและ **token** ไว้
+- บัญชี [DuckDNS](https://www.duckdns.org) (ล็อกอินด้วย GitHub/Google ได้) — ต้องการแค่ชื่อ ไม่ต้องใช้ token
 - อีเมลจริงสำหรับ Let's Encrypt (ใช้แจ้งเตือนใบรับรองใกล้หมดอายุ)
 
 ---
@@ -53,7 +53,10 @@ cloud-init ที่ลง Docker ให้ และเปิด NSG เฉพ�
 1. เข้า <https://www.duckdns.org> ล็อกอิน
 2. สร้าง subdomain เช่น `mysiem`
 3. ใส่ public IP ของ VM ลงช่อง **current ip** แล้วกด update
-4. คัดลอก **token** ไว้
+
+ไม่ต้องใช้ token เพราะ VM มี static IP — record ตั้งครั้งเดียวแล้วไม่ขยับ
+(ถ้าวันหนึ่งย้ายไป IP แบบ dynamic ค่อยเปิดตัวอัปเดตอัตโนมัติด้วย
+`--profile dynamic-dns` แล้วใส่ `DUCKDNS_SUBDOMAIN` / `DUCKDNS_TOKEN` ใน `.env`)
 
 ตรวจว่าชี้ถูก
 
@@ -95,8 +98,6 @@ SESSION_SECRET=...            # openssl rand -base64 32
 # โดเมนและ TLS
 SITE_DOMAIN=mysiem.duckdns.org
 LETSENCRYPT_EMAIL=you@example.com
-DUCKDNS_SUBDOMAIN=mysiem      # ชื่อเฉย ๆ ไม่ต้องมี .duckdns.org
-DUCKDNS_TOKEN=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 COOKIE_SECURE=true            # overlay ตั้งให้อยู่แล้ว แต่ตั้งไว้ให้ชัด
 DB_PUBLISH_PORT=0             # ไม่ต้อง publish ฐานข้อมูลออกนอก
@@ -157,8 +158,8 @@ docker compose -f docker-compose.yml -f docker-compose.caddy.yml exec -T backend
 audit trail จะบันทึก IP ของ container แทน IP จริงของผู้ใช้ ซึ่งทำให้หลักฐาน
 ไร้ความหมายพอดีตอนที่ต้องใช้
 
-ตัว `duckdns` container ปิง DuckDNS ทุก 5 นาทีเพื่อให้ record ตามทัน IP
-(Azure VM ที่ deallocate แล้วเปิดใหม่อาจได้ IP ใหม่)
+DuckDNS record ตั้งด้วยมือครั้งเดียว เพราะ IP เป็น static — ไม่มี token
+ของ DuckDNS อยู่บนเซิร์ฟเวอร์เลย
 
 ---
 

@@ -46,15 +46,23 @@ services:
   db:
     ports: !override []
 
-  # Keeps the DuckDNS record pointing at this machine. The free dynamic-DNS
-  # record is only useful while it tracks the current address, and an Azure VM
-  # with a dynamic public IP will change it across a deallocate/start cycle.
+  # Optional: keeps the DuckDNS record pointing at this machine.
+  #
+  # Not needed when the VM has a static public IP, which is what
+  # scripts/provision-azure.sh allocates — the record is set once by hand and
+  # never moves. It earns its place only on a dynamic address, where a
+  # deallocate/start cycle hands back a different IP.
+  #
+  # Left out of the default profile so that no DuckDNS token has to exist on
+  # the server at all. Switch it on with:
+  #   docker compose ... --profile dynamic-dns up -d
   duckdns:
+    profiles: ["dynamic-dns"]
     image: alpine:3.20
     restart: unless-stopped
     environment:
-      DUCKDNS_SUBDOMAIN: ${DUCKDNS_SUBDOMAIN:?set DUCKDNS_SUBDOMAIN, the name without .duckdns.org}
-      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN:?set DUCKDNS_TOKEN from https://www.duckdns.org}
+      DUCKDNS_SUBDOMAIN: ${DUCKDNS_SUBDOMAIN:-}
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN:-}
     command: >
       sh -c 'apk add --no-cache curl >/dev/null &&
       while true; do
