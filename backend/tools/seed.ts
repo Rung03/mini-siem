@@ -1,4 +1,5 @@
 import { hashPassword } from '../src/auth/password.js';
+import { initGeoip } from '../src/enrich/index.js';
 import { withAdmin, withOwner } from '../src/db/tenant.js';
 import { closeAllPools } from '../src/db/pool.js';
 import { generateToken, hashToken } from '../src/ingest/collectors.js';
@@ -466,6 +467,13 @@ async function seedTenant(
 async function main(): Promise<void> {
   const now = new Date();
   console.log('Seeding demo data…');
+
+  // The seed runs as its own process, so it has to open the GeoIP database
+  // itself — the server's call in src/index.ts does nothing for us here.
+  // Without this the events land with a hostname but no country, which looks
+  // exactly like broken enrichment rather than an uninitialised reader.
+  const geo = await initGeoip();
+  console.log(`  GeoIP: ${geo.available ? geo.description : 'not available, geo columns stay empty'}`);
 
   await ensureUser('admin@siem.local', 'admin', null);
 
