@@ -3,6 +3,7 @@
 import type { Server } from 'node:http';
 import { createApp } from './api/app.js';
 import { startAlertLoop } from './alerting/evaluator.js';
+import { ensureSystemTenant } from './auth/login-log.js';
 import { config } from './config.js';
 import { initGeoip } from './enrich/index.js';
 import { bootstrapRoles } from './db/bootstrap.js';
@@ -24,6 +25,15 @@ async function main(): Promise<void> {
 
   await runMaintenance();
   await initGeoip();
+
+  try {
+    await ensureSystemTenant();
+  } catch (err) {
+    console.warn(
+      '[boot] web login events disabled until the Mini SIEM tenant can be prepared:',
+      (err as Error).message,
+    );
+  }
 
   const app = createApp();
   const server: Server = app.listen(config.api.port, () => {

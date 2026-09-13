@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { audit } from '../../audit/log.js';
+import { recordLogin } from '../../auth/login-log.js';
 import { dummyVerify, verifyPassword } from '../../auth/password.js';
 import {
   clearSessionCookie,
@@ -42,8 +43,17 @@ export function authRouter(): Router {
       });
 
       const ok = row ? await verifyPassword(password, row.password_hash) : await dummyVerify();
+      const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : null;
 
       if (!row || !ok || !row.active) {
+        await recordLogin({
+          email,
+          outcome: !row ? 'unknown_user' : !ok ? 'bad_password' : 'inactive_user',
+          role: row?.role ?? null,
+          ip: req.clientIp ?? null,
+          userAgent,
+          at: new Date(),
+        });
         res.status(401).json({ error: 'invalid email or password' });
         return;
       }
@@ -62,6 +72,14 @@ export function authRouter(): Router {
         targetType: 'user',
         targetId: row.id,
         srcIp: req.clientIp ?? null,
+      });
+      await recordLogin({
+        email: row.email,
+        outcome: 'success',
+        role: row.role,
+        ip: req.clientIp ?? null,
+        userAgent,
+        at: new Date(),
       });
 
       res.json({

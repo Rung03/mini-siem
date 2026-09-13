@@ -182,6 +182,8 @@ migration รันครั้งเดียวตามลำดับเล�
 |---|---|---|
 | `auth/rbac.ts` | อ่าน session จาก cookie, หา IP จริงของผู้ใช้หลัง proxy, ตรวจสิทธิ์ Admin/Viewer, บังคับ JSON บน mutation กัน CSRF | `attachActor` `requireAuth` `requireAdmin` `requireJsonMutation` `clientIp` |
 | `auth/session.ts` | session ฝั่งเซิร์ฟเวอร์: cookie เก็บ token สุ่ม ฐานข้อมูลเก็บแค่ hash | `createSession` `lookupSession` `revokeSession` |
+| `auth/login-event.ts` | สร้าง event ของการล็อกอินหน้าเว็บ (สำเร็จ, รหัสผิด, ไม่มีอีเมลนี้, บัญชีถูกปิด) — ไม่มีรหัสผ่านอยู่ใน event | `buildLoginEvent` |
+| `auth/login-log.ts` | บันทึก event นั้นลง tenant **Mini SIEM** และสร้าง tenant กับกฎแจ้งเตือนการเดารหัสผ่านให้ตอนบูต ห้ามทำให้ล็อกอินพัง | `ensureSystemTenant` `recordLogin` |
 | `auth/password.ts` | hash รหัสผ่านด้วย scrypt (ไม่ใช้ native addon) และหน่วงเวลาเท่ากันเมื่อไม่พบอีเมล | `hashPassword` `verifyPassword` `dummyVerify` |
 | `audit/log.ts` | บันทึกการกระทำของผู้ดูแลลง `audit_log` ใน transaction เดียวกับการเปลี่ยนแปลง | `auditIn` `audit` |
 
@@ -217,6 +219,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | `tools/seed.ts` | สร้างข้อมูลเดโม: 2 tenant, ผู้ใช้, collector, กฎแจ้งเตือน, traffic 24 ชม. และชุดเดารหัสผ่านที่ทำให้เกิด alert — สร้าง payload ดิบของแต่ละแหล่งแล้วส่งผ่าน parser จริง |
 | `test/parsers.test.ts` | เทสต์ parser ทุกแหล่ง รวม sample ข้อ 4.1–4.7 ของโจทย์ |
 | `test/migrate.test.ts` | เทสต์ว่า checksum เดิมก่อนลบ comment ยังถูกยอมรับ และ migration ที่ถูกแก้จริงยังถูกปฏิเสธ |
+| `test/login-event.test.ts` | เทสต์ event ของการล็อกอินหน้าเว็บ และยืนยันว่าไม่มีรหัสผ่านใน event |
 | `test/enrich.test.ts` | เทสต์ enrichment: ไฟล์ GeoIP หาย, provider พัง, DNS ค้าง — event ต้องรอดทุกกรณี |
 | `test/isolation.test.ts` | **เทสต์ความปลอดภัย** จงใจเขียน query ผิดเพื่อพิสูจน์ว่า RLS กันข้าม tenant และลบ log ไม่ได้แม้เป็น Admin (ต้องมีฐานข้อมูล) |
 | `vitest.config.ts` | ตั้งค่าเทสต์ ไม่รันพร้อมกันเพราะใช้ฐานข้อมูลร่วม |
@@ -309,6 +312,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | 15 | seed เป็น process แยก ต้องเรียก `initGeoip()` เอง | `tools/seed.ts` | ข้อมูลเดโมมี hostname แต่ไม่มีประเทศ |
 | 16 | ห้ามแก้ migration ที่ apply แล้ว — เพิ่มไฟล์ใหม่แทน ถ้าแก้แค่ comment/ช่องว่าง ต้องเพิ่ม checksum เดิมลง `checksums.ts` | `db/migrate.ts` · `db/checksums.ts` | backend ไม่ยอมบูต (checksum ไม่ตรง) |
 | 17 | ไฟล์ `.sh` ต้องเป็น LF | `.gitattributes` | `bad interpreter: /usr/bin/env bash^M` บน VM |
+| 18 | event การล็อกอินต้องไม่มีรหัสผ่าน และ `recordLogin` ห้าม throw | `auth/login-event.ts` · `auth/login-log.ts` | รหัสผ่านหลุดลงตาราง `events` ที่ลบไม่ได้ / ล็อกอินพังเมื่อบันทึก log ไม่สำเร็จ |
 
 ---
 
