@@ -35,7 +35,6 @@ jobs:
       ADMIN_DB_PASSWORD: ci-admin
       EVALUATOR_DB_PASSWORD: ci-evaluator
       SESSION_SECRET: ci-session-secret-with-at-least-32-bytes
-      ENRICH_RDNS_ENABLED: "false"
     defaults:
       run:
         working-directory: backend
