@@ -161,7 +161,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | `m365.ts` | Microsoft 365 Unified Audit Log (`UserLoggedIn` / `UserLoginFailed`) |
 | `aws-cloudtrail.ts` | AWS CloudTrail (`ConsoleLogin`, `AssumeRole` ฯลฯ) |
 | `crowdstrike.ts` | CrowdStrike Falcon ทั้ง `UserActivityAuditEvent` และ `DetectionSummaryEvent` |
-| `generic.ts` | syslog ทั่วไปและ JSON จากแอปภายใน จับรูปแบบ sshd (`Failed password for …`) ได้ |
+| `generic.ts` | syslog ทั่วไปและ JSON จากแอปภายใน จับรูปแบบ sshd (`Failed password for …`) ได้ — บรรทัด key=value ที่เป็น firewall (`action` + `src` + `dst` หรือ `devname` + `logid`) ส่งต่อให้ `fortigate.ts` |
 
 ---
 
@@ -171,7 +171,8 @@ migration รันครั้งเดียวตามลำดับเล�
 |---|---|---|
 | `syslog.ts` | ฟัง UDP และ TCP พอร์ต 514 รองรับทั้ง octet-counting และแบ่งบรรทัด ผู้ส่งที่ไม่ตรงกับ collector ไหนถูกทิ้ง | `startSyslogUdp` `startSyslogTcp` |
 | `http.ts` | `POST /ingest` ด้วย bearer token รับได้ทั้ง object, array, `{"Records":[…]}` และ NDJSON เขียนแบบรอผลก่อนตอบ | `ingestRouter` `extractPayloads` |
-| `upload.ts` | `POST /api/ingest/file` อัปโหลด `.log` `.json` `.ndjson` `.csv` ผ่านหน้าเว็บ | `handleUpload` |
+| `upload.ts` | `POST /api/ingest/file` อัปโหลด `.log` `.json` `.ndjson` `.csv` ผ่านหน้าเว็บ ตอบช่วงเวลาที่เก็บจริงกลับมา | `handleUpload` |
+| `timestamps.ts` | ชุด event ที่ event ใหม่สุดยังเก่ากว่า `RETENTION_DAYS` (เช่น sample ปี 2025) ถูกขยับเวลามาที่ปัจจุบัน เก็บเวลาเดิมใน `attrs.original_ts` และติด tag `timestamp-shifted` — ปิดด้วย `keep_timestamps=true` (อัปโหลด) หรือ header `X-Keep-Timestamps: true` (HTTP) | `rebaseStaleTimestamps` `timeSpan` |
 | `collectors.ts` | จับคู่ข้อมูลเข้ากับ collector (จาก token หรือ IP) มี cache ทั้งเจอและไม่เจอ สร้างและ hash token | `resolveByToken` `resolveByIp` `resolveById` `generateToken` |
 
 ---
@@ -193,14 +194,15 @@ migration รันครั้งเดียวตามลำดับเล�
 
 | ไฟล์ | หน้าที่ |
 |---|---|
-| `app.ts` | ประกอบ Express: security headers → `/api/health` → `/ingest` (ก่อน JSON parser) → routes → error handler |
+| `app.ts` | ประกอบ Express: security headers → `/api/health` → rate limit + `/ingest` (ก่อน JSON parser) → rate limit ล็อกอิน → routes → `/api/metrics` → error handler |
+| `ratelimit.ts` | จำกัดคำขอต่อ IP ต่อนาที (`/api/auth/login`, `/ingest`) ตอบ 429 และล็อกบัญชีชั่วคราวเมื่อรหัสผิดซ้ำ เก็บในหน่วยความจำ |
 | `util.ts` | ตัวช่วยของ route: ตรวจ input ด้วย zod, แปลง error `42501` ของ Postgres เป็น 403, ตัดสินว่า request นี้เกี่ยวกับ tenant ไหน, แปลงช่วงเวลา |
 
 **routes — `api/routes/`**
 
 | ไฟล์ | endpoint | สิทธิ์ |
 |---|---|---|
-| `auth.ts` | `POST /auth/login` · `POST /auth/logout` · `GET /auth/me` | ทุกคน |
+| `auth.ts` | `POST /auth/login` (รหัสผิดครบ `LOGIN_LOCKOUT_THRESHOLD` ครั้ง → ล็อก ตอบ 429) · `POST /auth/logout` · `GET /auth/me` | ทุกคน |
 | `events.ts` | `GET /events` (ค้นหา, แบ่งหน้าแบบ cursor) · `GET /events/:id/raw` | ผู้ที่ล็อกอิน |
 | `stats.ts` | `GET /stats/summary` · `/timeseries` · `/top` · `/sources` | ผู้ที่ล็อกอิน |
 | `alerts.ts` | `GET /alerts` · `POST /alerts/:id/ack` | ผู้ที่ล็อกอิน |
@@ -216,13 +218,18 @@ migration รันครั้งเดียวตามลำดับเล�
 |---|---|
 | `src/index.ts` | จุดเริ่มระบบ บูตตามลำดับ: role → migration → partition → GeoIP → API → syslog → ตัวตรวจกฎ ตอนปิด flush ของค้างก่อน |
 | `src/config.ts` | อ่านและตรวจค่า environment ทั้งหมดด้วย zod รวมเป็น object `config` ที่เดียว |
+| `src/observability/metrics.ts` | ตัวนับ Prometheus: event ที่เขียน, ที่แปลงไม่ได้, ที่ถูกทิ้ง, alert, คำขอที่โดน rate limit, ผลการล็อกอิน, คิว batcher — อ่านที่ `GET /api/metrics` (Admin หรือ `METRICS_TOKEN`) |
 | `tools/seed.ts` | สร้างข้อมูลเดโม: 2 tenant, ผู้ใช้, collector, กฎแจ้งเตือน, traffic 24 ชม. และชุดเดารหัสผ่านที่ทำให้เกิด alert — สร้าง payload ดิบของแต่ละแหล่งแล้วส่งผ่าน parser จริง |
 | `test/parsers.test.ts` | เทสต์ parser ทุกแหล่ง รวม sample ข้อ 4.1–4.7 ของโจทย์ |
 | `test/migrate.test.ts` | เทสต์ว่า checksum เดิมก่อนลบ comment ยังถูกยอมรับ และ migration ที่ถูกแก้จริงยังถูกปฏิเสธ |
 | `test/login-event.test.ts` | เทสต์ event ของการล็อกอินหน้าเว็บ และยืนยันว่าไม่มีรหัสผ่านใน event |
 | `test/enrich.test.ts` | เทสต์ enrichment: ไฟล์ GeoIP หาย, provider พัง, DNS ค้าง — event ต้องรอดทุกกรณี |
 | `test/isolation.test.ts` | **เทสต์ความปลอดภัย** จงใจเขียน query ผิดเพื่อพิสูจน์ว่า RLS กันข้าม tenant และลบ log ไม่ได้แม้เป็น Admin (ต้องมีฐานข้อมูล) |
+| `test/ratelimit.test.ts` | เทสต์ rate limit และการล็อกบัญชี: ครบเกณฑ์แล้วปฏิเสธ, หมดเวลาแล้วปล่อย, หน่วยความจำไม่บานเมื่อ IP ท่วม |
+| `test/metrics.test.ts` | เทสต์รูปแบบข้อความ Prometheus |
+| `test/timestamps.test.ts` | เทสต์การขยับเวลา: เก่ากว่า retention ถูกขยับโดยระยะห่างเท่าเดิม, ของใหม่ไม่ถูกแตะ, `raw` ไม่เปลี่ยน |
 | `vitest.config.ts` | ตั้งค่าเทสต์ ไม่รันพร้อมกันเพราะใช้ฐานข้อมูลร่วม |
+| `README.md` | วิธีรัน backend และเทสต์ |
 | `tsconfig.json` · `package.json` | ตั้งค่า TypeScript และ dependency |
 | `Dockerfile` | build 2 ขั้น: compile TypeScript แล้วสร้าง image เบาพร้อมไฟล์ migration |
 
@@ -271,7 +278,11 @@ migration รันครั้งเดียวตามลำดับเล�
 | `docker-compose.appliance.yml` | overlay โหมด appliance: ผูกพอร์ตกับ `127.0.0.1` ปิด webhook |
 | `docker-compose.caddy.yml` | overlay ขึ้นอินเทอร์เน็ต: Caddy ถือพอร์ต 80/443, `TRUST_PROXY_HOPS=2`, ปิด publish ฐานข้อมูล |
 | `deploy/cloud-init.yaml` | ติดตั้ง Docker, swap, firewall บน VM ตอนบูตครั้งแรก |
-| `scripts/provision-azure.sh` | สร้าง VM บน Azure พร้อม static IP และ NSG ถ้าขนาดที่ขอใช้ไม่ได้จะลองขนาดถัดไปเอง |
+| `scripts/provision-azure.sh` | สร้าง VM บน Azure พร้อม static IP และ NSG ถ้าขนาดที่ขอใช้ไม่ได้จะลองขนาดถัดไปเอง — จำกัดผู้ส่ง syslog ด้วย `SYSLOG_SOURCE_IPS` |
+| `infra/terraform/` | IaC ทางเลือกของสคริปต์ข้างบน: resource group, VNet, NSG, static IP, VM + cloud-init (`terraform.tfvars.example`) |
+| `.github/workflows/ci.yml` | CI: typecheck, เทสต์ครบกับ Postgres จริง (ล้มถ้าชุดความปลอดภัยถูกข้าม), build frontend และ image, `terraform validate` |
+| `docs/postman_collection.json` | Postman Collection ของ ingest / search / dashboard / alert / admin |
+| `ingest/README.md` · `tests/README.md` · `frontend/README.md` | ชี้ไปยังโค้ดจริงตามโครงสร้างที่โจทย์ขอ |
 | `scripts/fetch-geoip.sh` | ดาวน์โหลดฐานข้อมูล DB-IP Lite (`--with-asn` เพิ่มข้อมูล ASN) |
 | `samples/*.json` · `samples/*.log` | log ตัวอย่างตามโจทย์ข้อ 4 ทุกแหล่ง |
 | `samples/send_syslog.sh` | ส่ง syslog ตัวอย่าง (`--brute` ส่งชุดที่ทำให้เกิด alert) |
@@ -298,6 +309,8 @@ migration รันครั้งเดียวตามลำดับเล�
 | 6 | `FORCE ROW LEVEL SECURITY` มีผลกับ owner ด้วย — owner ต้องมี policy `SELECT` บน `tenants` `users` `collectors` | `002_rls.sql` | **ล็อกอินไม่ได้ทั้งระบบ** และ ingest ทุกช่องทางพัง (ฟังก์ชัน `SECURITY DEFINER` รันเป็น owner) |
 | 7 | tenant มาจาก collector เสมอ ไม่ใช่จากค่าใน payload | `ingest/collectors.ts` | ผู้ส่งอ้างเป็น tenant อื่นได้ (`tenant` ใน payload ถูกเก็บไว้ใน `attrs.claimed_tenant` เท่านั้น) |
 | 8 | role ทุกตัว `NOBYPASSRLS` ถูกตั้งซ้ำทุกครั้งที่บูต | `db/bootstrap.ts` | มีคนเผลอให้สิทธิ์เกินแล้วค้างอยู่ถาวร |
+| 19 | lockout ใช้อีเมลเป็น key **รวมอีเมลที่ไม่มีอยู่จริง** และเช็กก่อนแตะฐานข้อมูล | `api/routes/auth.ts` | ถ้าล็อกเฉพาะบัญชีที่มีจริง ผู้โจมตีใช้คำตอบ 429 ไล่หาอีเมลที่มีอยู่ได้ |
+| 20 | `req.clientIp` ต้องถูกตั้งก่อน rate limit และก่อน `/ingest` | `api/app.ts` | rate limit ใช้ key เดียวกันทุกคน = ทั้งระบบโดนบล็อกพร้อมกัน |
 
 ### ความถูกต้องของระบบ
 
@@ -313,6 +326,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | 16 | ห้ามแก้ migration ที่ apply แล้ว — เพิ่มไฟล์ใหม่แทน ถ้าแก้แค่ comment/ช่องว่าง ต้องเพิ่ม checksum เดิมลง `checksums.ts` | `db/migrate.ts` · `db/checksums.ts` | backend ไม่ยอมบูต (checksum ไม่ตรง) |
 | 17 | ไฟล์ `.sh` ต้องเป็น LF | `.gitattributes` | `bad interpreter: /usr/bin/env bash^M` บน VM |
 | 18 | event การล็อกอินต้องไม่มีรหัสผ่าน และ `recordLogin` ห้าม throw | `auth/login-event.ts` · `auth/login-log.ts` | รหัสผ่านหลุดลงตาราง `events` ที่ลบไม่ได้ / ล็อกอินพังเมื่อบันทึก log ไม่สำเร็จ |
+| 21 | ขยับเวลาเฉพาะชุดที่ event **ใหม่สุด** ยังเก่ากว่า retention และห้ามแก้ `raw` | `ingest/timestamps.ts` | log จริงของวันนี้ถูกเปลี่ยนเวลา / หลักฐานดิบถูกแก้ — ถ้าไม่ขยับเลย sample ปี 2025 จะถูกลบจาก `events_backfill` ภายในรอบ maintenance ถัดไป |
 
 ---
 
@@ -359,7 +373,7 @@ migration รันครั้งเดียวตามลำดับเล�
 
 ### บัญชีเดโม
 
-รหัสผ่าน: Admin `admin123` · Viewer `viewer123`
+รหัสผ่าน: Admin `admin123` · Viewer `viewer123` — ระบบที่เปิดสู่อินเทอร์เน็ตให้ตั้ง `SEED_ADMIN_PASSWORD` / `SEED_VIEWER_PASSWORD` ใน `.env` ก่อน seed
 
 ฐานข้อมูลที่ seed ไว้ก่อนหน้ายังใช้รหัสเดิมจนกว่าจะรัน `docker compose exec -T backend npm run seed:prod -- --accounts-only` (เปลี่ยนเฉพาะรหัสผ่าน ไม่เพิ่ม log)
 
@@ -381,5 +395,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | [`docs/setup_appliance.md`](docs/setup_appliance.md) | ติดตั้งแบบ appliance ทีละขั้น |
 | [`docs/setup_saas.md`](docs/setup_saas.md) | ติดตั้งแบบ SaaS ทีละขั้น |
 | [`docs/deploy_azure.md`](docs/deploy_azure.md) | deploy บน Azure VM พร้อม TLS จริง |
+| [`docs/postman_collection.json`](docs/postman_collection.json) | Postman Collection สำหรับ ingest และ search |
+| [`tests/README.md`](tests/README.md) | รายการเทสต์และวิธีรันให้ครบทุกชุด |
 
 ข้อมูลตำแหน่ง IP โดย DB-IP — <https://db-ip.com> (CC-BY 4.0)

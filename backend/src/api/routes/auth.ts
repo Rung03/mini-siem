@@ -2,6 +2,7 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
+import { config } from '../../config.js';
 import { audit } from '../../audit/log.js';
 import { recordLogin } from '../../auth/login-log.js';
 import { dummyVerify, verifyPassword } from '../../auth/password.js';
@@ -15,6 +16,7 @@ import {
 import { requireAuth } from '../../auth/rbac.js';
 import { withUnscopedApp } from '../../db/tenant.js';
 import type { Actor, ActorRole } from '../../db/tenant.js';
+import { LoginLockout } from '../ratelimit.js';
 import { handler, parse } from '../util.js';
 
 const credentials = z.object({
@@ -24,11 +26,36 @@ const credentials = z.object({
 
 export function authRouter(): Router {
   const router = Router();
+  const lockout = new LoginLockout(
+    config.security.lockoutThreshold,
+    config.security.lockoutMs,
+    config.security.lockoutMs,
+  );
 
   router.post(
     '/auth/login',
     handler(async (req, res) => {
       const { email, password } = parse(credentials, req.body);
+      const lockKey = email.toLowerCase();
+      const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : null;
+
+      const retryAfter = lockout.retryAfter(lockKey);
+      if (retryAfter > 0) {
+        await recordLogin({
+          email,
+          outcome: 'locked',
+          role: null,
+          ip: req.clientIp ?? null,
+          userAgent,
+          at: new Date(),
+        });
+        res.setHeader('Retry-After', String(retryAfter));
+        res.status(429).json({
+          error: 'too many failed sign-in attempts, try again later',
+          retry_after_seconds: retryAfter,
+        });
+        return;
+      }
 
       const row = await withUnscopedApp(async (db) => {
         const { rows } = await db.query<{
@@ -43,9 +70,9 @@ export function authRouter(): Router {
       });
 
       const ok = row ? await verifyPassword(password, row.password_hash) : await dummyVerify();
-      const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : null;
 
       if (!row || !ok || !row.active) {
+        lockout.recordFailure(lockKey);
         await recordLogin({
           email,
           outcome: !row ? 'unknown_user' : !ok ? 'bad_password' : 'inactive_user',
@@ -58,6 +85,7 @@ export function authRouter(): Router {
         return;
       }
 
+      lockout.clear(lockKey);
       const { token, expiresAt } = await createSession(row.id);
       setSessionCookie(res, token, expiresAt);
 

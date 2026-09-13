@@ -1,0 +1,98 @@
+# CI: ตรวจ type, รันเทสต์ทั้งหมดกับ PostgreSQL จริง, build image และตรวจไฟล์ Terraform
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: siem
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d siem"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: siem
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ci-postgres
+      OWNER_DB_PASSWORD: ci-owner
+      APP_DB_PASSWORD: ci-app
+      ADMIN_DB_PASSWORD: ci-admin
+      EVALUATOR_DB_PASSWORD: ci-evaluator
+      SESSION_SECRET: ci-session-secret-with-at-least-32-bytes
+      ENRICH_RDNS_ENABLED: "false"
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Test (the database suites must run, not skip)
+        run: |
+          npx vitest run --reporter=default --reporter=json --outputFile=vitest.json
+          node -e "
+            const r = require('./vitest.json');
+            console.log(r.numPassedTests + ' passed, ' + r.numPendingTests + ' skipped');
+            if (r.numPendingTests > 0) {
+              console.error('database suites were skipped - the security tests did not run');
+              process.exit(1);
+            }
+          "
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+  images:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - run: docker compose build
+      - name: Appliance overlay resolves
+        run: docker compose -f docker-compose.yml -f docker-compose.appliance.yml config --quiet
+
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init -backend=false
+      - run: terraform validate

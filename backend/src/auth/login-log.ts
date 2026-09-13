@@ -2,6 +2,7 @@
 
 import { ensurePartitions } from '../db/partitions.js';
 import { withAdmin } from '../db/tenant.js';
+import { loginAttempts } from '../observability/metrics.js';
 import { insertEvents } from '../pipeline/writer.js';
 import { buildLoginEvent, type LoginAttempt } from './login-event.js';
 
@@ -38,6 +39,7 @@ export async function ensureSystemTenant(): Promise<string> {
 }
 
 export async function recordLogin(attempt: LoginAttempt): Promise<void> {
+  loginAttempts.inc({ outcome: attempt.outcome });
   try {
     const tenantId = systemTenantId ?? (await ensureSystemTenant());
     await insertEvents({ tenantId, collectorId: null, events: [buildLoginEvent(attempt)] });

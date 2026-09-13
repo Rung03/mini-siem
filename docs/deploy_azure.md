@@ -40,11 +40,23 @@ cloud-init ที่ลง Docker ให้ และเปิด NSG เฉพ�
 | 80/tcp | ทุกที่ | **จำเป็น** สำหรับ ACME HTTP-01 ไม่ใช่แค่ redirect |
 | 443/tcp + udp | ทุกที่ | หน้าเว็บและ API (udp คือ HTTP/3) |
 | 22/tcp | **IP ของคุณเท่านั้น** | สคริปต์ตรวจ IP ปัจจุบันให้อัตโนมัติ |
-| 514/udp + tcp | ทุกที่ | syslog — ของจริงควรจำกัดเฉพาะ IP อุปกรณ์ที่ส่ง |
+| 514/udp + tcp | `SYSLOG_SOURCE_IPS` (ค่าเริ่มต้นทุกที่) | syslog — ตั้งเป็น IP หรือ CIDR เดียวของอุปกรณ์ที่ส่ง เช่น `SYSLOG_SOURCE_IPS=198.51.100.0/24` |
 
 เสร็จแล้วจะได้ public IP มา จดไว้
 
-> ปรับค่าได้: `RG=... VM=... LOCATION=... ./scripts/provision-azure.sh`
+> ปรับค่าได้: `RG=... VM=... LOCATION=... SYSLOG_SOURCE_IPS=... ./scripts/provision-azure.sh`
+
+### ทางเลือก: Terraform
+
+```bash
+cd infra/terraform
+cp terraform.tfvars.example terraform.tfvars   # ใส่ subscription, IP ที่ให้ SSH และ IP ผู้ส่ง syslog
+terraform init
+terraform apply
+terraform output public_ip
+```
+
+ลบทิ้งด้วย `terraform destroy`
 
 ---
 

@@ -61,12 +61,23 @@ export const api = {
   del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 };
 
+export interface UploadResult {
+  filename: string;
+  accepted: number;
+  unparsed: number;
+  timestamps_shifted_seconds: number;
+  first_ts: string | null;
+  last_ts: string | null;
+}
+
 export async function uploadFile(
   collectorId: string,
   file: File,
-): Promise<{ filename: string; accepted: number; unparsed: number }> {
+  keepTimestamps = false,
+): Promise<UploadResult> {
   const form = new FormData();
   form.append('collector_id', collectorId);
+  if (keepTimestamps) form.append('keep_timestamps', 'true');
   form.append('file', file);
 
   const response = await fetch('/api/ingest/file', {
@@ -85,7 +96,7 @@ export async function uploadFile(
     throw new ApiError(response.status, message);
   }
 
-  return (await response.json()) as { filename: string; accepted: number; unparsed: number };
+  return (await response.json()) as UploadResult;
 }
 
 export function qs(params: Record<string, string | number | undefined | null>): string {

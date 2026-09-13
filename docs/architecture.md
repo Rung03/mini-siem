@@ -203,5 +203,18 @@ Webhook ส่งแบบแยกรอบ อ่านจากตารา�
 - ไม่ได้ออกแบบมารับข้อมูลระดับ TB — Postgres + partition พอสำหรับเดโม ถ้าต้องสเกลจริงต้องย้าย hot path ไป ClickHouse/OpenSearch แล้วยกการแยก tenant ขึ้นมาทำที่ชั้น query ซึ่งอ่อนกว่าปัจจุบัน
 - enrichment เติมตอน ingest เท่านั้น ไม่ย้อนเติมข้อมูลเก่า ถ้าเพิ่งลง GeoIP
   ทีหลัง แถวที่เก็บไปแล้วจะยังว่าง
-- ไม่มี CI/CD และ IaC
 - Admin ที่เลือกดู "ทุก tenant" อาศัย WHERE ในโค้ดกรอง ไม่ใช่ RLS (RLS ของ role นี้คือ `USING (true)` โดยตั้งใจ) — การรับประกันด้วยฐานข้อมูลครอบคลุม **Viewer** ซึ่งเป็นกรณีที่สำคัญ
+- syslog ยืนยันผู้ส่งด้วย IP ต้นทางอย่างเดียว และไม่เข้ารหัส UDP ปลอม IP ได้ จึงต้องจำกัดที่ firewall ด้วย (`SYSLOG_SOURCE_IPS`)
+- rate limit และ lockout เก็บในหน่วยความจำของ process เดียว restart แล้วนับใหม่
+
+## 10. Hardening, Observability, CI/CD, IaC
+
+| เรื่อง | ทำอย่างไร |
+|---|---|
+| Brute force หน้าเว็บ | จำกัด `/api/auth/login` ต่อ IP ต่อนาที + ล็อกบัญชีเมื่อรหัสผิดครบเกณฑ์ ความพยายามระหว่างล็อกยังถูกบันทึกเป็น event `locked` จึงยังนับเข้ากฎ brute force |
+| ท่วม ingest | จำกัด `POST /ingest` ต่อ IP ต่อนาที นอกเหนือจากขนาด body และจำนวน event ต่อ request |
+| พอร์ตภายใน | API `:8080` และฐานข้อมูล `:5433` ผูกกับ `127.0.0.1` ทุกโหมด เข้าจากนอกได้ผ่าน nginx เท่านั้น |
+| Metrics | `GET /api/metrics` รูปแบบ Prometheus ต้องเป็น Admin หรือส่ง `METRICS_TOKEN` |
+| CI | `.github/workflows/ci.yml` รันเทสต์กับ Postgres จริง และ **ล้มถ้าชุดความปลอดภัยถูกข้าม** |
+| IaC | `infra/terraform/` สร้าง VM, NSG, static IP บน Azure แทน `provision-azure.sh` |
+| Log ย้อนหลัง | ชุดที่เก่ากว่า retention ทั้งชุดถูกขยับเวลามาที่ปัจจุบัน (`ingest/timestamps.ts`) เพราะถ้าเก็บตามเดิมจะตกไปที่ `events_backfill` แล้วถูกลบภายในชั่วโมง — `raw` ไม่ถูกแก้ เวลาเดิมอยู่ที่ `attrs.original_ts` |

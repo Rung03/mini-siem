@@ -10,11 +10,15 @@ import type { CanonicalEvent } from '../normalize/schema.js';
 import { insertEvents } from '../pipeline/writer.js';
 import { resolveById } from './collectors.js';
 import { extractPayloads, type ExtractedPayload } from './http.js';
+import { rebaseStaleTimestamps, timeSpan } from './timestamps.js';
 
 interface UploadResult {
   filename: string;
   accepted: number;
   unparsed: number;
+  timestamps_shifted_seconds: number;
+  first_ts: string | null;
+  last_ts: string | null;
 }
 
 function parseCsv(text: string): ExtractedPayload[] {
@@ -79,6 +83,7 @@ export async function handleUpload(req: Request, res: Response): Promise<void> {
   }
 
   let collectorId = '';
+  let keepTimestamps = false;
   let filename = 'upload';
   let truncated = false;
   const chunks: Buffer[] = [];
@@ -93,6 +98,7 @@ export async function handleUpload(req: Request, res: Response): Promise<void> {
 
   busboy.on('field', (name, value) => {
     if (name === 'collector_id') collectorId = value.trim();
+    if (name === 'keep_timestamps') keepTimestamps = /^(1|true|on)$/i.test(value.trim());
   });
 
   busboy.on('file', (_name, stream, info) => {
@@ -145,6 +151,10 @@ export async function handleUpload(req: Request, res: Response): Promise<void> {
           peerIp: null,
         }),
       );
+      const shiftedMs = keepTimestamps
+        ? 0
+        : rebaseStaleTimestamps(events, { now: new Date(), retentionDays: config.retention.days });
+      const span = timeSpan(events);
 
       const size = config.ingest.writeBatchSize;
       let accepted = 0;
@@ -160,6 +170,9 @@ export async function handleUpload(req: Request, res: Response): Promise<void> {
         filename,
         accepted,
         unparsed: events.filter((e) => !e.parseOk).length,
+        timestamps_shifted_seconds: Math.round(shiftedMs / 1000),
+        first_ts: span.first,
+        last_ts: span.last,
       };
 
       await withActor(actor, (db) =>

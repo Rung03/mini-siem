@@ -245,6 +245,42 @@ describe('generic', () => {
     expect(e.source).toBe('api');
   });
 
+  it('hands a firewall key=value line to the firewall parser', () => {
+    const e = run(
+      'generic',
+      '<134>Aug 20 12:44:56 fw01 vendor=demo product=ngfw action=deny ' +
+        'src=10.0.1.10 dst=8.8.8.8 spt=5353 dpt=53 proto=udp msg=DNS blocked policy=Block-DNS',
+    );
+    expect(e.parseOk).toBe(true);
+    expect(e.source).toBe('firewall');
+    expect(e.sourceType).toBe('fortigate');
+    expect(e.action).toBe('deny');
+    expect(e.dstPort).toBe(53);
+    expect(e.ruleName).toBe('Block-DNS');
+  });
+
+  it('hands a FortiGate event line to the firewall parser', () => {
+    const e = run(
+      'generic',
+      '<190>date=2026-09-12 time=09:14:22 devname="FG100E" logid="0100032002" type="event" ' +
+        'subtype="system" level="alert" logdesc="Admin login failed" user="admin" ' +
+        'srcip=203.0.113.66 action="login" status="failed"',
+    );
+    expect(e.source).toBe('firewall');
+    expect(e.eventCategory).toBe('authentication');
+    expect(e.eventOutcome).toBe('failure');
+    expect(e.userName).toBe('admin');
+  });
+
+  it('keeps sshd lines that mention src= on the login path', () => {
+    const e = run(
+      'generic',
+      '<38>Sep 12 09:18:22 web-01 sshd[2411]: Failed password for root from 203.0.113.66 port 22 ssh2 src=1.2.3.4 dst=5.6.7.8 action=x',
+    );
+    expect(e.source).toBe('network');
+    expect(e.eventCategory).toBe('authentication');
+  });
+
   it('still stores a line it cannot classify', () => {
     const e = run('generic', '<38>Sep 12 09:21:00 web-01 kernel: usb 1-1: new device');
     expect(e.parseOk).toBe(true);

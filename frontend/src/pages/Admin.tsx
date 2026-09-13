@@ -252,6 +252,7 @@ function FileUpload({ collectors }: { collectors: Collector[] }) {
   const tenantNames = useTenantNames();
   const [collectorId, setCollectorId] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [keepTimestamps, setKeepTimestamps] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -263,8 +264,14 @@ function FileUpload({ collectors }: { collectors: Collector[] }) {
     setError(null);
     setResult(null);
     try {
-      const r = await uploadFile(collectorId, file);
-      setResult(`${r.filename}: ${r.accepted} accepted, ${r.unparsed} unparsed`);
+      const r = await uploadFile(collectorId, file, keepTimestamps);
+      const days = Math.round(r.timestamps_shifted_seconds / 86_400);
+      const shifted =
+        r.timestamps_shifted_seconds > 0
+          ? ` — timestamps were older than retention and moved forward ${days} day(s); ` +
+            'originals are kept in attrs.original_ts'
+          : '';
+      setResult(`${r.filename}: ${r.accepted} accepted, ${r.unparsed} unparsed${shifted}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'upload failed');
     } finally {
@@ -299,6 +306,19 @@ function FileUpload({ collectors }: { collectors: Collector[] }) {
             accept=".log,.json,.ndjson,.csv,.tsv,.txt"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
+        </div>
+
+        <div className="field">
+          <label htmlFor="keep-timestamps">Timestamps</label>
+          <label htmlFor="keep-timestamps" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input
+              id="keep-timestamps"
+              type="checkbox"
+              checked={keepTimestamps}
+              onChange={(e) => setKeepTimestamps(e.target.checked)}
+            />
+            Keep original (older than retention is dropped)
+          </label>
         </div>
 
         <button className="primary" type="submit" disabled={busy || !file || !collectorId}>

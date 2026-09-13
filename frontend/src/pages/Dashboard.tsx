@@ -13,6 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 import {
+  SOURCES,
   api,
   qs,
   type ApiUser,
@@ -35,8 +36,9 @@ import {
 export function Dashboard({ user }: { user: ApiUser }) {
   const { key, setKey, from, to, bucket } = useTimeRange('24h');
   const [tenant, setTenant] = useState('');
+  const [source, setSource] = useState('');
 
-  const params = { from, to, tenant_id: tenant || undefined };
+  const params = { from, to, tenant_id: tenant || undefined, source: source || undefined };
 
   const summary = useQuery({
     queryKey: ['summary', params],
@@ -95,6 +97,15 @@ export function Dashboard({ user }: { user: ApiUser }) {
         <h1>Dashboard</h1>
         <div className="filters" style={{ marginBottom: 0 }}>
           <TenantSelect user={user} value={tenant} onChange={setTenant} />
+          <div className="field">
+            <label htmlFor="dash-source">Source</label>
+            <select id="dash-source" value={source} onChange={(e) => setSource(e.target.value)}>
+              <option value="">All sources</option>
+              {SOURCES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
           <RangePicker value={key} onChange={setKey} />
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { config } from '../config.js';
 import { withEvaluator } from '../db/tenant.js';
+import { alertsRaised } from '../observability/metrics.js';
 import { deliverPendingWebhooks } from './webhook.js';
 
 export interface AlertRule {
@@ -170,6 +171,7 @@ export async function evaluateAll(): Promise<number> {
     }
   }
 
+  alertsRaised.inc({}, raised);
   if (raised > 0) console.log(`[alerting] raised ${raised} new alert(s)`);
   return raised;
 }

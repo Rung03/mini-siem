@@ -3,7 +3,12 @@
 import type { CanonicalEvent } from '../normalize/schema.js';
 import { blankEvent } from '../normalize/schema.js';
 
-export type LoginOutcome = 'success' | 'bad_password' | 'unknown_user' | 'inactive_user';
+export type LoginOutcome =
+  | 'success'
+  | 'bad_password'
+  | 'unknown_user'
+  | 'inactive_user'
+  | 'locked';
 
 export interface LoginAttempt {
   email: string;

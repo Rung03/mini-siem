@@ -12,6 +12,7 @@ ADMIN="${ADMIN:-azureuser}"
 DISK_GB="${DISK_GB:-40}"
 
 ADMIN_SOURCE_IP="${ADMIN_SOURCE_IP:-}"
+SYSLOG_SOURCE_IPS="${SYSLOG_SOURCE_IPS:-*}"
 
 cd "$(dirname "$0")/.."
 
@@ -73,8 +74,11 @@ rule allow-http     1001 Tcp "80"       "*"
 rule allow-https    1002 Tcp "443"      "*"
 rule allow-http3    1003 Udp "443"      "*"
 rule allow-ssh      1004 Tcp "22"       "$ADMIN_SOURCE_IP"
-rule allow-syslog-u 1005 Udp "514"      "*"
-rule allow-syslog-t 1006 Tcp "514"      "*"
+if [[ "$SYSLOG_SOURCE_IPS" == "*" ]]; then
+  echo "warning: syslog 514 is open to the whole internet — set SYSLOG_SOURCE_IPS to the senders' addresses" >&2
+fi
+rule allow-syslog-u 1005 Udp "514"      "$SYSLOG_SOURCE_IPS"
+rule allow-syslog-t 1006 Tcp "514"      "$SYSLOG_SOURCE_IPS"
 
 IP="$(az vm show -d --resource-group "$RG" --name "$VM" --query publicIps -o tsv)"
 

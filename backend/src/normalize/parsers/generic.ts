@@ -16,6 +16,7 @@ import {
   stripSyslogHeader,
   tryJson,
 } from '../util.js';
+import { parseFortigate } from './fortigate.js';
 
 interface LoginHint {
   outcome: Outcome;
@@ -59,6 +60,11 @@ function sniffLogin(message: string): LoginHint | null {
     return { outcome: 'failure', user: probe[1]!, ip: coerceIp(probe[2]), port: portNumber };
   }
   return null;
+}
+
+function looksLikeFirewall(kv: Record<string, string>): boolean {
+  if (kv.devname && kv.logid) return true;
+  return Boolean(kv.action && (kv.src ?? kv.srcip) && (kv.dst ?? kv.dstip));
 }
 
 function fromJson(o: Record<string, unknown>, input: ParserInput): CanonicalEvent {
@@ -130,9 +136,12 @@ export const parseGeneric: Parser = (input): CanonicalEvent => {
   if (isPlainObject(json)) return fromJson(json, input);
 
   const frame = stripSyslogHeader(input.raw);
-  const event = blankEvent('generic', input);
   const hint = sniffLogin(frame.message);
   const kv = parseKeyValue(frame.message);
+
+  if (!hint && looksLikeFirewall(kv)) return parseFortigate(input);
+
+  const event = blankEvent('generic', input);
 
   event.ts = frame.ts ?? input.receivedAt;
   event.host = frame.host;

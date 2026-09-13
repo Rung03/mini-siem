@@ -8,6 +8,7 @@ import type { CanonicalEvent, SourceType } from '../normalize/schema.js';
 import { insertEvents } from '../pipeline/writer.js';
 import { recordDrop } from '../pipeline/writer.js';
 import { resolveByToken } from './collectors.js';
+import { rebaseStaleTimestamps } from './timestamps.js';
 
 export interface ExtractedPayload {
   raw: string;
@@ -120,6 +121,10 @@ export function ingestRouter(): Router {
     }
 
     const events = normalizePayloads(collector.sourceType, payloads, req.clientIp ?? null);
+    const keepTimestamps = /^(1|true)$/i.test(String(req.headers['x-keep-timestamps'] ?? ''));
+    const shiftedMs = keepTimestamps
+      ? 0
+      : rebaseStaleTimestamps(events, { now: new Date(), retentionDays: config.retention.days });
 
     try {
       const written = await insertEvents({
@@ -132,6 +137,7 @@ export function ingestRouter(): Router {
         accepted: written,
         unparsed: events.filter((e) => !e.parseOk).length,
         source_type: collector.sourceType,
+        ...(shiftedMs > 0 ? { timestamps_shifted_seconds: Math.round(shiftedMs / 1000) } : {}),
       });
     } catch (err) {
       console.error('[ingest/http] write failed', err);

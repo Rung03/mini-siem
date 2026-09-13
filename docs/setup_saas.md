@@ -194,12 +194,12 @@ git pull && docker compose up -d --build
 
 รายการนี้อยู่นอกขอบเขตเดโม แต่ควรรู้ว่ายังขาด
 
-- เปลี่ยนรหัสผ่านบัญชีเดโมทั้งหมด หรือลบทิ้งแล้วสร้างใหม่
+- ตั้ง `SEED_ADMIN_PASSWORD` / `SEED_VIEWER_PASSWORD` ก่อน seed หรือเปลี่ยนรหัสผ่านบัญชีเดโมทั้งหมด
 - ตั้ง `DB_PUBLISH_PORT=0` ไม่ให้ฐานข้อมูลโผล่ออกนอก
-- จำกัด 514 ให้เฉพาะ IP ที่ส่ง log จริง
+- จำกัด 514 ให้เฉพาะ IP ที่ส่ง log จริง — syslog UDP ปลอม IP ต้นทางได้ CIDR ของ collector จึงไม่ใช่การยืนยันตัวตนที่แข็งแรง
 - ตั้ง backup อัตโนมัติ และ **ทดสอบ restore จริง**
-- ใส่ rate limit ที่ `/ingest` และ `/api/auth/login`
-- ต่อ metrics/log ของ container เข้ากับระบบ monitoring
+- ปรับ `LOGIN_RATE_LIMIT_PER_MIN` / `INGEST_RATE_LIMIT_PER_MIN` ให้เหมาะกับปริมาณจริง (มี rate limit และ lockout แล้ว แต่นับต่อ process ถ้ารันหลาย replica ต้องย้ายไปเก็บที่ Redis)
+- ตั้ง `METRICS_TOKEN` แล้วให้ Prometheus scrape `/api/metrics` และต่อ log ของ container เข้ากับระบบ monitoring
 - ใช้ใบรับรองจริงแทน self-signed
 
 ## 8. แก้ปัญหาที่พบบ่อย

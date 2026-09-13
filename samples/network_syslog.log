@@ -1,0 +1,4 @@
+<190>Aug 20 13:01:02 r1 if=ge-0/0/1 event=link-down mac=aa:bb:cc:dd:ee:ff reason=carrier-loss
+<190>Aug 20 13:02:11 r1 if=ge-0/0/1 event=link-up mac=aa:bb:cc:dd:ee:ff reason=restored
+<38>Aug 20 13:05:44 web-01 sshd[2411]: Failed password for invalid user admin from 203.0.113.66 port 52344 ssh2
+<38>Aug 20 13:05:49 web-01 sshd[2412]: Accepted password for jsmith from 10.0.0.5 port 51234 ssh2

@@ -1,0 +1,8 @@
+# ตัวอย่างค่าตั้ง — คัดลอกเป็น terraform.tfvars (ไฟล์นั้นไม่ถูก commit)
+
+subscription_id     = "00000000-0000-0000-0000-000000000000"
+location            = "eastasia"
+vm_size             = "Standard_B2as_v2"
+admin_source_cidrs  = ["198.51.100.10/32"]
+syslog_source_cidrs = ["198.51.100.0/24"]
+dns_label           = "siem-demo"

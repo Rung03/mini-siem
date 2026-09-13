@@ -1,0 +1,3 @@
+<134>Aug 20 12:44:56 fw01 vendor=demo product=ngfw action=deny src=10.0.1.10 dst=8.8.8.8 spt=5353 dpt=53 proto=udp msg=DNS blocked policy=Block-DNS
+<134>Aug 20 12:45:02 fw01 vendor=demo product=ngfw action=allow src=10.0.1.11 dst=1.1.1.1 spt=51515 dpt=443 proto=tcp msg=HTTPS allowed policy=Allow-Web
+<190>date=2026-09-12 time=09:14:22 devname="FG100E" devid="FG100ETK18001234" logid="0100032002" type="event" subtype="system" level="alert" logdesc="Admin login failed" user="admin" ui="https(203.0.113.44)" srcip=203.0.113.44 action="login" status="failed" reason="name_invalid" msg="Administrator admin login failed"

@@ -6,6 +6,7 @@ build/
 .env
 .env.local
 *.log
+!samples/*.log
 coverage/
 .DS_Store
 tsconfig.tsbuildinfo
@@ -14,3 +15,8 @@ geoip/*.mmdb
 geoip/*.gz
 __pycache__/
 *.pyc
+
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars

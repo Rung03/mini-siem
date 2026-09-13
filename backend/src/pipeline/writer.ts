@@ -5,6 +5,7 @@ import { enrichBatch } from '../enrich/index.js';
 import type { Queryable } from '../db/tenant.js';
 import { withApp, withUnscopedApp } from '../db/tenant.js';
 import type { CanonicalEvent } from '../normalize/schema.js';
+import { eventsUnparsed, eventsWritten, ingestDrops } from '../observability/metrics.js';
 
 const COLUMNS = [
   'tenant_id',
@@ -74,7 +75,7 @@ export async function insertEvents(batch: WriteBatch): Promise<number> {
 
   enrichBatch(batch.events);
 
-  return withApp(batch.tenantId, async (db) => {
+  const written = await withApp(batch.tenantId, async (db) => {
     let written = 0;
 
     for (const rows of chunk(batch.events, MAX_ROWS_PER_STATEMENT)) {
@@ -141,6 +142,10 @@ export async function insertEvents(batch: WriteBatch): Promise<number> {
 
     return written;
   });
+
+  eventsWritten.inc({}, written);
+  eventsUnparsed.inc({}, batch.events.filter((e) => !e.parseOk).length);
+  return written;
 }
 
 export async function recordDrop(
@@ -151,6 +156,7 @@ export async function recordDrop(
   sample: string | null,
 ): Promise<void> {
   console.warn(`[ingest] dropped ${channel} payload from ${srcIp ?? 'unknown'}: ${reason}`);
+  ingestDrops.inc({ channel });
 
   const write = async (db: Queryable) => {
     await db.query(

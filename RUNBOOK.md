@@ -106,6 +106,12 @@ curl -X POST http://localhost:8081/api/ingest/file \
 
 รับ `.log` `.json` `.ndjson` `.csv`
 
+> **เรื่องเวลา:** ไฟล์ตัวอย่างลงวันที่ปี 2025 ซึ่งเก่ากว่า retention 7 วัน ถ้าเก็บตามเดิมจะไม่ขึ้นบน
+> dashboard และถูกลบในรอบ maintenance ถัดไป ระบบจึงขยับเวลาทั้งชุดมาที่ปัจจุบัน (ระยะห่างระหว่าง
+> event เท่าเดิม) เก็บเวลาเดิมไว้ที่ `attrs.original_ts` และติด tag `timestamp-shifted` — ใช้กับ
+> `POST /ingest` ด้วย ถ้าต้องการเวลาเดิมจริง ๆ ติ๊ก "Keep original" หรือส่ง `-F keep_timestamps=true`
+> (อัปโหลด) / `-H "X-Keep-Timestamps: true"` (HTTP)
+
 ---
 
 ## ตรวจสอบว่าระบบทำตามที่อ้างจริง
@@ -119,7 +125,7 @@ POSTGRES_HOST=localhost POSTGRES_PORT=5433 npm test
 ซึ่งเป็นชื่อที่ใช้ได้เฉพาะในเครือข่ายของ compose เท่านั้น ถ้ารันด้วย `npm test`
 เฉย ๆ จากเครื่อง host จะต่อฐานข้อมูลไม่ได้ แล้วชุดเทสต์ที่สำคัญจะถูก **ข้าม**
 ไปเงียบ ๆ — ขึ้นว่า `skipped` ไม่ใช่ `failed` ให้ดูบรรทัดสรุปทุกครั้งว่าได้
-`73 passed` จริง ไม่ใช่ `61 passed | 12 skipped`
+`102 passed` จริง ไม่ใช่ `90 passed | 12 skipped`
 
 (การข้ามเมื่อไม่มีฐานข้อมูลเป็นพฤติกรรมที่ตั้งใจ จะได้รันเทสต์ตัวแปลงตอนออฟไลน์ได้)
 
@@ -175,6 +181,11 @@ docker compose up -d --force-recreate backend
 | `SYSLOG_UDP_PORT` / `SYSLOG_TCP_PORT` | 514 | เปลี่ยนได้ถ้าพอร์ตชนกับของเดิม |
 | `INGEST_MAX_BATCH` | 5000 | จำนวน event สูงสุดต่อ 1 request |
 | `COOKIE_SECURE` | true | ต้องเป็น true เมื่อเสิร์ฟผ่าน https |
+| `LOGIN_RATE_LIMIT_PER_MIN` | 20 | จำนวนครั้งที่เรียก `/api/auth/login` ได้ต่อ IP ต่อนาที เกินได้ 429 (0 = ปิด) |
+| `LOGIN_LOCKOUT_THRESHOLD` / `LOGIN_LOCKOUT_MINUTES` | 5 / 15 | รหัสผิดครบกี่ครั้งภายในกี่นาทีจึงล็อกบัญชี และล็อกนานเท่าไร (0 = ปิด) |
+| `INGEST_RATE_LIMIT_PER_MIN` | 1200 | จำนวนคำขอ `POST /ingest` ต่อ IP ต่อนาที (0 = ปิด) |
+| `METRICS_TOKEN` | ว่าง | Bearer token ของ `GET /api/metrics` ถ้าว่างต้องล็อกอินเป็น Admin |
+| `SEED_ADMIN_PASSWORD` / `SEED_VIEWER_PASSWORD` | `admin123` / `viewer123` | รหัสผ่านบัญชีที่ seed สร้าง |
 
 ---
 

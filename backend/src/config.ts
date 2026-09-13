@@ -50,6 +50,12 @@ const schema = z.object({
   COOKIE_SECURE: bool(true),
   TRUST_PROXY_HOPS: int(1),
 
+  LOGIN_RATE_LIMIT_PER_MIN: int(20),
+  LOGIN_LOCKOUT_THRESHOLD: int(5),
+  LOGIN_LOCKOUT_MINUTES: int(15),
+  INGEST_RATE_LIMIT_PER_MIN: int(1200),
+  METRICS_TOKEN: z.string().optional(),
+
   SYSLOG_UDP_PORT: int(514),
   SYSLOG_TCP_PORT: int(514),
   SYSLOG_ENABLED: bool(true),
@@ -123,6 +129,14 @@ export const config = {
     sessionTtlHours: env.SESSION_TTL_HOURS,
     cookieSecure: env.COOKIE_SECURE,
     trustProxyHops: env.TRUST_PROXY_HOPS,
+    metricsToken: env.METRICS_TOKEN || null,
+  },
+
+  security: {
+    loginRatePerMinute: env.LOGIN_RATE_LIMIT_PER_MIN,
+    lockoutThreshold: env.LOGIN_LOCKOUT_THRESHOLD,
+    lockoutMs: env.LOGIN_LOCKOUT_MINUTES * 60_000,
+    ingestRatePerMinute: env.INGEST_RATE_LIMIT_PER_MIN,
   },
 
   syslog: {

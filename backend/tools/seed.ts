@@ -48,8 +48,9 @@ const TENANTS: TenantSpec[] = [
   },
 ];
 
-const ADMIN_PASSWORD = 'admin123';
-const VIEWER_PASSWORD = 'viewer123';
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'admin123';
+const VIEWER_PASSWORD = process.env.SEED_VIEWER_PASSWORD || 'viewer123';
+const USING_DEMO_PASSWORDS = !process.env.SEED_ADMIN_PASSWORD || !process.env.SEED_VIEWER_PASSWORD;
 const ACCOUNTS_ONLY = process.argv.includes('--accounts-only');
 
 function iso(d: Date): string {
@@ -420,6 +421,12 @@ async function main(): Promise<void> {
   console.log(`  admin@siem.local        / ${ADMIN_PASSWORD}   (Admin, all tenants)`);
   for (const t of TENANTS) {
     console.log(`  ${t.viewerEmail.padEnd(24)}/ ${VIEWER_PASSWORD}   (Viewer, ${t.name})`);
+  }
+  if (USING_DEMO_PASSWORDS) {
+    console.warn(
+      '\nwarning: demo passwords in use — set SEED_ADMIN_PASSWORD and SEED_VIEWER_PASSWORD ' +
+        'in .env before exposing this system',
+    );
   }
   console.log(
     '\nAn alert should appear within one evaluation cycle (30s) for 203.0.113.66.',
