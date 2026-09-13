@@ -370,6 +370,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | ไฟล์ | เนื้อหา |
 |---|---|
 | [`RUNBOOK.md`](RUNBOOK.md) | คู่มือรันและตรวจสอบระบบ |
+| [`ไฟล์อธิบายการเปิดข้อมูลต่างๆ.md`](ไฟล์อธิบายการเปิดข้อมูลต่างๆ.md) | วิธีเปิดระบบ และเข้าดูข้อมูลดิบ: ฐานข้อมูล, API, log, ไฟล์ตัวอย่าง, ใบรับรอง |
 | [`docs/architecture.md`](docs/architecture.md) | สถาปัตยกรรม, data flow, tenant model, เหตุผลการเลือกเทคโนโลยี |
 | [`docs/setup_appliance.md`](docs/setup_appliance.md) | ติดตั้งแบบ appliance ทีละขั้น |
 | [`docs/setup_saas.md`](docs/setup_saas.md) | ติดตั้งแบบ SaaS ทีละขั้น |
