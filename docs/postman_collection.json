@@ -1,25 +1,58 @@
 {
   "info": {
     "name": "Mini SIEM",
-    "description": "Ingest, search, dashboard, alert and admin API. Set baseUrl, then run 'Auth / Login as admin' first — Postman keeps the session cookie. For HTTP ingest, put a collector token in collectorToken.",
+    "description": "Ingest, search, dashboard, alert and admin API. Run the collection top to bottom: 'Auth / Login as admin' first (Postman keeps the session cookie), the viewer and sign-out folder last. Set collectorToken to an HTTP collector token and collectorId, alertId, eventId, eventTs to ids from your system.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8081" },
-    { "key": "adminEmail", "value": "admin@siem.local" },
-    { "key": "adminPassword", "value": "admin123" },
-    { "key": "viewerEmail", "value": "viewer@northwind.local" },
-    { "key": "viewerPassword", "value": "viewer123" },
-    { "key": "collectorToken", "value": "sk_replace_me" },
-    { "key": "collectorId", "value": "" },
-    { "key": "alertId", "value": "" },
-    { "key": "eventId", "value": "" },
-    { "key": "eventTs", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@siem.local"
+    },
+    {
+      "key": "adminPassword",
+      "value": "admin123"
+    },
+    {
+      "key": "viewerEmail",
+      "value": "viewer@northwind.local"
+    },
+    {
+      "key": "viewerPassword",
+      "value": "viewer123"
+    },
+    {
+      "key": "collectorToken",
+      "value": "sk_replace_me"
+    },
+    {
+      "key": "collectorId",
+      "value": ""
+    },
+    {
+      "key": "alertId",
+      "value": ""
+    },
+    {
+      "key": "eventId",
+      "value": ""
+    },
+    {
+      "key": "eventTs",
+      "value": ""
+    }
   ],
   "item": [
     {
       "name": "Health",
-      "request": { "method": "GET", "url": "{{baseUrl}}/api/health" }
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/health"
+      }
     },
     {
       "name": "Auth",
@@ -28,30 +61,24 @@
           "name": "Login as admin",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\"email\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}" },
-            "url": "{{baseUrl}}/api/auth/login"
-          }
-        },
-        {
-          "name": "Login as viewer",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\"email\":\"{{viewerEmail}}\",\"password\":\"{{viewerPassword}}\"}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}"
+            },
             "url": "{{baseUrl}}/api/auth/login"
           }
         },
         {
           "name": "Current user",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/me" }
-        },
-        {
-          "name": "Logout",
           "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/auth/logout"
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me"
           }
         }
       ]
@@ -64,10 +91,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{collectorToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{collectorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"tenant\": \"demoA\",\n  \"source\": \"api\",\n  \"event_type\": \"app_login_failed\",\n  \"user\": \"alice\",\n  \"ip\": \"203.0.113.7\",\n  \"reason\": \"wrong_password\",\n  \"@timestamp\": \"{{$isoTimestamp}}\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant\": \"demoA\",\n  \"source\": \"api\",\n  \"event_type\": \"app_login_failed\",\n  \"user\": \"alice\",\n  \"ip\": \"203.0.113.7\",\n  \"reason\": \"wrong_password\",\n  \"@timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
             "url": "{{baseUrl}}/ingest"
           }
         },
@@ -76,10 +112,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{collectorToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{collectorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "[\n  {\"source\":\"api\",\"event_type\":\"app_login_failed\",\"user\":\"bob\",\"ip\":\"203.0.113.8\",\"@timestamp\":\"{{$isoTimestamp}}\"},\n  {\"source\":\"api\",\"event_type\":\"app_login\",\"user\":\"bob\",\"ip\":\"203.0.113.8\",\"@timestamp\":\"{{$isoTimestamp}}\"}\n]" },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\"source\":\"api\",\"event_type\":\"app_login_failed\",\"user\":\"bob\",\"ip\":\"203.0.113.8\",\"@timestamp\":\"{{$isoTimestamp}}\"},\n  {\"source\":\"api\",\"event_type\":\"app_login\",\"user\":\"bob\",\"ip\":\"203.0.113.8\",\"@timestamp\":\"{{$isoTimestamp}}\"}\n]"
+            },
             "url": "{{baseUrl}}/ingest"
           }
         },
@@ -88,10 +133,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{collectorToken}}" },
-              { "key": "Content-Type", "value": "application/x-ndjson" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{collectorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/x-ndjson"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\"source\":\"api\",\"event_type\":\"app_login_failed\",\"user\":\"carol\",\"ip\":\"203.0.113.9\",\"@timestamp\":\"{{$isoTimestamp}}\"}\n{\"source\":\"api\",\"event_type\":\"app_login_failed\",\"user\":\"carol\",\"ip\":\"203.0.113.9\",\"@timestamp\":\"{{$isoTimestamp}}\"}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"source\":\"api\",\"event_type\":\"app_login_failed\",\"user\":\"carol\",\"ip\":\"203.0.113.9\",\"@timestamp\":\"{{$isoTimestamp}}\"}\n{\"source\":\"api\",\"event_type\":\"app_login_failed\",\"user\":\"carol\",\"ip\":\"203.0.113.9\",\"@timestamp\":\"{{$isoTimestamp}}\"}"
+            },
             "url": "{{baseUrl}}/ingest"
           }
         },
@@ -100,10 +154,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{collectorToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{collectorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\"Records\":[{\"eventTime\":\"{{$isoTimestamp}}\",\"eventSource\":\"signin.amazonaws.com\",\"eventName\":\"ConsoleLogin\",\"awsRegion\":\"ap-southeast-1\",\"sourceIPAddress\":\"198.51.100.23\",\"userIdentity\":{\"type\":\"IAMUser\",\"userName\":\"admin\",\"accountId\":\"123456789012\"},\"responseElements\":{\"ConsoleLogin\":\"Failure\"}}]}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"Records\":[{\"eventTime\":\"{{$isoTimestamp}}\",\"eventSource\":\"signin.amazonaws.com\",\"eventName\":\"ConsoleLogin\",\"awsRegion\":\"ap-southeast-1\",\"sourceIPAddress\":\"198.51.100.23\",\"userIdentity\":{\"type\":\"IAMUser\",\"userName\":\"admin\",\"accountId\":\"123456789012\"},\"responseElements\":{\"ConsoleLogin\":\"Failure\"}}]}"
+            },
             "url": "{{baseUrl}}/ingest"
           }
         },
@@ -114,8 +177,16 @@
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "collector_id", "value": "{{collectorId}}", "type": "text" },
-                { "key": "file", "type": "file", "src": "samples/m365_audit.json" }
+                {
+                  "key": "collector_id",
+                  "value": "{{collectorId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/m365_audit.json"
+                }
               ]
             },
             "url": "{{baseUrl}}/api/ingest/file"
@@ -132,70 +203,263 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/events?outcome=failure&ip=203.0.113.0/24&limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "events"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ],
               "query": [
-                { "key": "outcome", "value": "failure" },
-                { "key": "ip", "value": "203.0.113.0/24" },
-                { "key": "source", "value": "api", "disabled": true },
-                { "key": "user", "value": "alice", "disabled": true },
-                { "key": "q", "value": "password", "disabled": true },
-                { "key": "tenant_id", "value": "", "disabled": true },
-                { "key": "limit", "value": "50" }
+                {
+                  "key": "outcome",
+                  "value": "failure"
+                },
+                {
+                  "key": "ip",
+                  "value": "203.0.113.0/24"
+                },
+                {
+                  "key": "source",
+                  "value": "api",
+                  "disabled": true
+                },
+                {
+                  "key": "user",
+                  "value": "alice",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "password",
+                  "disabled": true
+                },
+                {
+                  "key": "tenant_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
               ]
             }
           }
         },
         {
           "name": "Raw payload of one event",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}/raw?ts={{eventTs}}" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/events/{{eventId}}/raw?ts={{eventTs}}"
+          }
         }
       ]
     },
     {
       "name": "Dashboard",
       "item": [
-        { "name": "Summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/stats/summary" } },
-        { "name": "Timeline (hourly)", "request": { "method": "GET", "url": "{{baseUrl}}/api/stats/timeseries?bucket=hour" } },
-        { "name": "Top source IPs", "request": { "method": "GET", "url": "{{baseUrl}}/api/stats/top?field=src_ip&top=10" } },
-        { "name": "Top users (failures)", "request": { "method": "GET", "url": "{{baseUrl}}/api/stats/top?field=user_name&outcome=failure&top=10" } },
-        { "name": "Events per source", "request": { "method": "GET", "url": "{{baseUrl}}/api/stats/sources" } }
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stats/summary"
+          }
+        },
+        {
+          "name": "Timeline (hourly)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stats/timeseries?bucket=hour"
+          }
+        },
+        {
+          "name": "Top source IPs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stats/top?field=src_ip&top=10"
+          }
+        },
+        {
+          "name": "Top users (failures)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stats/top?field=user_name&outcome=failure&top=10"
+          }
+        },
+        {
+          "name": "Events per source",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stats/sources"
+          }
+        }
       ]
     },
     {
       "name": "Alerts",
       "item": [
-        { "name": "List alerts", "request": { "method": "GET", "url": "{{baseUrl}}/api/alerts" } },
+        {
+          "name": "List alerts",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/alerts"
+          }
+        },
         {
           "name": "Acknowledge alert",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/api/alerts/{{alertId}}/ack"
           }
         },
-        { "name": "List rules", "request": { "method": "GET", "url": "{{baseUrl}}/api/rules" } }
+        {
+          "name": "List rules",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/rules"
+          }
+        }
       ]
     },
     {
       "name": "Admin",
       "item": [
-        { "name": "Collectors", "request": { "method": "GET", "url": "{{baseUrl}}/api/collectors" } },
+        {
+          "name": "Collectors",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/collectors"
+          }
+        },
         {
           "name": "Rotate collector token",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/api/collectors/{{collectorId}}/rotate-token"
           }
         },
-        { "name": "Tenants", "request": { "method": "GET", "url": "{{baseUrl}}/api/tenants" } },
-        { "name": "Users", "request": { "method": "GET", "url": "{{baseUrl}}/api/users" } },
-        { "name": "Audit trail", "request": { "method": "GET", "url": "{{baseUrl}}/api/audit" } },
-        { "name": "Rejected ingest", "request": { "method": "GET", "url": "{{baseUrl}}/api/ingest-drops" } },
-        { "name": "Partitions", "request": { "method": "GET", "url": "{{baseUrl}}/api/partitions" } },
-        { "name": "Metrics (Prometheus)", "request": { "method": "GET", "url": "{{baseUrl}}/api/metrics" } }
+        {
+          "name": "Tenants",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tenants"
+          }
+        },
+        {
+          "name": "Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Audit trail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/audit"
+          }
+        },
+        {
+          "name": "Rejected ingest",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/ingest-drops"
+          }
+        },
+        {
+          "name": "Partitions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/partitions"
+          }
+        },
+        {
+          "name": "Metrics (Prometheus)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/metrics"
+          }
+        }
       ]
+    },
+    {
+      "name": "Viewer and sign out (run last)",
+      "item": [
+        {
+          "name": "Login as viewer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{viewerEmail}}\",\"password\":\"{{viewerPassword}}\"}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Viewer cannot open admin endpoints",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('viewer is refused', () => pm.expect(pm.response.code).to.equal(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.info.requestName.startsWith('Viewer cannot')) {",
+          "  pm.test(`${pm.info.requestName}: 2xx`, () => pm.expect(pm.response.code).to.be.within(200, 299));",
+          "}"
+        ]
+      }
     }
   ]
 }

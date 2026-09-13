@@ -154,6 +154,13 @@ python samples/post_logs.py --url https://siem.example.com/ingest --token sk_xxx
 
 syslog จากอุปกรณ์ภายนอกต้องเปิด 514 ใน security group ให้เฉพาะ IP ต้นทางที่รู้จัก และตั้ง CIDR ของ collector ให้ตรง
 
+> ชุด event ที่เก่ากว่า `RETENTION_DAYS` ทั้งชุด (เช่น `samples/*.json` ที่ลงวันที่ปี 2025) ถูกขยับเวลามาที่ปัจจุบัน
+> ทั้งทาง `POST /ingest` และการอัปโหลดไฟล์ เวลาเดิมอยู่ที่ `attrs.original_ts` — ส่ง `X-Keep-Timestamps: true`
+> หรือ `keep_timestamps=true` ถ้าต้องการเก็บเวลาเดิม
+>
+> ทุกคำขอถูกจำกัดต่อ IP (`LOGIN_RATE_LIMIT_PER_MIN`, `INGEST_RATE_LIMIT_PER_MIN`) — เมื่อวาง proxy ไว้หน้า
+> ต้องตั้ง `TRUST_PROXY_HOPS` ให้ตรงจำนวน proxy ไม่อย่างนั้นทุกคนจะใช้ IP เดียวกันและโดนจำกัดพร้อมกัน
+
 ## 5.5 เปิด Enrichment (ไม่บังคับ)
 
 เติมประเทศ/เมือง/ASN ของ IP ต้นทาง และชื่อจาก reverse DNS

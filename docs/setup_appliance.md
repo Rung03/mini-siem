@@ -129,6 +129,12 @@ curl -X POST http://<ไอพี>:8081/ingest \
 
 หน้า Administration → Collectors → Upload a log file รับ `.log` `.json` `.ndjson` `.csv`
 
+> ไฟล์ที่ทั้งชุดเก่ากว่า `RETENTION_DAYS` (เช่นไฟล์ใน `samples/` ที่ลงวันที่ปี 2025) ถูกขยับเวลามาที่ปัจจุบัน
+> ไม่อย่างนั้นจะไม่ขึ้นบน dashboard และถูกลบในรอบ maintenance ถัดไป เวลาเดิมอยู่ที่ `attrs.original_ts`
+> ถ้าต้องการเวลาเดิมให้ติ๊ก "Keep original" (หรือ `-F keep_timestamps=true` / `-H "X-Keep-Timestamps: true"`)
+
+syslog แบบ key=value ของ firewall (`action=` `src=` `dst=`) ที่ส่งเข้า collector ชนิด `generic` จะถูกอ่านด้วย parser firewall ให้เอง
+
 ## 7. ดูแลรักษา
 
 ```bash
