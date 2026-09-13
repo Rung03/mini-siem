@@ -355,7 +355,9 @@ migration รันครั้งเดียวตามลำดับเล�
 
 ### บัญชีเดโม
 
-รหัสผ่านทุกบัญชี `demo-password-change-me`
+รหัสผ่าน: Admin `admin123` · Viewer `viewer123`
+
+ฐานข้อมูลที่ seed ไว้ก่อนหน้ายังใช้รหัสเดิมจนกว่าจะรัน `docker compose exec -T backend npm run seed:prod -- --accounts-only` (เปลี่ยนเฉพาะรหัสผ่าน ไม่เพิ่ม log)
 
 | อีเมล | บทบาท |
 |---|---|

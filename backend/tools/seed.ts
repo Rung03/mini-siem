@@ -48,7 +48,9 @@ const TENANTS: TenantSpec[] = [
   },
 ];
 
-const DEFAULT_PASSWORD = 'demo-password-change-me';
+const ADMIN_PASSWORD = 'admin123';
+const VIEWER_PASSWORD = 'viewer123';
+const ACCOUNTS_ONLY = process.argv.includes('--accounts-only');
 
 function iso(d: Date): string {
   return d.toISOString();
@@ -245,12 +247,12 @@ async function ensureUser(
   role: 'admin' | 'viewer',
   tenantId: string | null,
 ): Promise<void> {
-  const hash = await hashPassword(DEFAULT_PASSWORD);
+  const hash = await hashPassword(role === 'admin' ? ADMIN_PASSWORD : VIEWER_PASSWORD);
   await withAdmin(async (db) => {
     await db.query(
       `INSERT INTO users (email, password_hash, role, tenant_id)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (email) DO NOTHING`,
+       ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
       [email, hash, role, tenantId],
     );
   });
@@ -410,13 +412,14 @@ async function main(): Promise<void> {
   await ensureUser('admin@siem.local', 'admin', null);
 
   for (const [index, spec] of TENANTS.entries()) {
-    await seedTenant(spec, now, index === 0);
+    if (ACCOUNTS_ONLY) await ensureUser(spec.viewerEmail, 'viewer', await ensureTenant(spec));
+    else await seedTenant(spec, now, index === 0);
   }
 
   console.log('\nSign in with:');
-  console.log(`  admin@siem.local        / ${DEFAULT_PASSWORD}   (Admin, all tenants)`);
+  console.log(`  admin@siem.local        / ${ADMIN_PASSWORD}   (Admin, all tenants)`);
   for (const t of TENANTS) {
-    console.log(`  ${t.viewerEmail.padEnd(24)}/ ${DEFAULT_PASSWORD}   (Viewer, ${t.name})`);
+    console.log(`  ${t.viewerEmail.padEnd(24)}/ ${VIEWER_PASSWORD}   (Viewer, ${t.name})`);
   }
   console.log(
     '\nAn alert should appear within one evaluation cycle (30s) for 203.0.113.66.',

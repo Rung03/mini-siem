@@ -38,6 +38,6 @@ Ready.
   http://localhost:8081      plain
   https://localhost:8443     TLS (self-signed — your browser will warn once)
 
-  admin@siem.local          / demo-password-change-me   (Admin, all tenants)
-  viewer@northwind.local    / demo-password-change-me   (Viewer, one tenant)
+  admin@siem.local          / admin123    (Admin, all tenants)
+  viewer@northwind.local    / viewer123   (Viewer, one tenant)
 EOF

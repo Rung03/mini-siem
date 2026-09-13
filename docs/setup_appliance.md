@@ -94,7 +94,7 @@ docker compose exec backend npm run seed:prod
 | `viewer@northwind.local` | Viewer — Northwind Traders |
 | `viewer@contoso.local` | Viewer — Contoso Ltd |
 
-รหัสผ่านทุกบัญชี: `demo-password-change-me` — **เปลี่ยนทันทีในงานจริง** ที่หน้า Administration → Users
+รหัสผ่าน: Admin `admin123` · Viewer `viewer123` — **เปลี่ยนทันทีในงานจริง** ที่หน้า Administration → Users
 
 ## 6. ชี้อุปกรณ์เข้ามา
 
