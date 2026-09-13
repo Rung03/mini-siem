@@ -12,3 +12,5 @@ tsconfig.tsbuildinfo
 
 geoip/*.mmdb
 geoip/*.gz
+__pycache__/
+*.pyc
