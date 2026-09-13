@@ -1,3 +1,5 @@
+# บังคับไฟล์สคริปต์และ config เป็น LF เพื่อให้รันบน Linux ได้
+
 * text=auto eol=lf
 
 *.sh          text eol=lf

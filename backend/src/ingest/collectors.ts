@@ -1,3 +1,5 @@
+// จับคู่ข้อมูลที่เข้ามากับ collector จาก token หรือ IP เพื่อรู้ tenant และ parser
+
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { withUnscopedApp } from '../db/tenant.js';
 import type { SourceType } from '../normalize/schema.js';

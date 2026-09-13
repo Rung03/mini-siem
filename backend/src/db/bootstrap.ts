@@ -1,3 +1,5 @@
+// สร้างและตั้งค่า role ในฐานข้อมูลทั้ง 4 ตัวตอนบูต
+
 import { config } from '../config.js';
 import { withSuperuser } from './pool.js';
 

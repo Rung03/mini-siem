@@ -1,3 +1,5 @@
+// API สถิติสำหรับ dashboard: สรุป, ตามเวลา, อันดับ, แหล่งข้อมูล
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../../auth/rbac.js';

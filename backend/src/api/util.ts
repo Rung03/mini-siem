@@ -1,3 +1,5 @@
+// ตัวช่วยของ route: ตรวจ input, แปลง error, หา tenant ของ request, แปลงช่วงเวลา
+
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 import type { Actor } from '../db/tenant.js';

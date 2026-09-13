@@ -1,3 +1,5 @@
+// สร้างข้อมูลเดโม: tenant, ผู้ใช้, collector, กฎแจ้งเตือน และ log 24 ชั่วโมง
+
 import { hashPassword } from '../src/auth/password.js';
 import { initGeoip } from '../src/enrich/index.js';
 import { withAdmin, withOwner } from '../src/db/tenant.js';

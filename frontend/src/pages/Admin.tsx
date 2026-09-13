@@ -1,3 +1,5 @@
+// หน้าผู้ดูแล: collector, กฎแจ้งเตือน, ผู้ใช้, tenant, audit trail และ partition
+
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {

@@ -1,3 +1,5 @@
+// API ค้นหา event และดู payload ดิบ
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../../auth/rbac.js';

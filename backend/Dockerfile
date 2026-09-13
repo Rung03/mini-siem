@@ -1,3 +1,5 @@
+# build backend (compile TypeScript) แล้วสร้าง image พร้อมไฟล์ migration
+
 FROM node:24-alpine AS build
 WORKDIR /app
 

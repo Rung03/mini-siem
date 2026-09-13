@@ -1,3 +1,5 @@
+// hash และตรวจรหัสผ่านด้วย scrypt
+
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 

@@ -1,3 +1,5 @@
+# คำสั่งลัดสำหรับรัน ทดสอบ และดูแลระบบ — ดูทั้งหมดด้วย make help
+
 SHELL := /bin/bash
 COMPOSE := docker compose
 APPLIANCE := docker compose -f docker-compose.yml -f docker-compose.appliance.yml

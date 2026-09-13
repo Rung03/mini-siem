@@ -1,3 +1,5 @@
+// ส่วนประกอบใช้ซ้ำ: เลือกช่วงเวลา, เลือก tenant, การ์ดตัวเลข, จัดรูปแบบเวลา
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type ApiUser, type Tenant } from '../api/client.js';

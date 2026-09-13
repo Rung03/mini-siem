@@ -1,3 +1,5 @@
+-- สร้างตารางทั้งหมด และตาราง events แบบ partition ตามวันและ tenant
+
 CREATE TABLE tenants (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug        text NOT NULL UNIQUE,

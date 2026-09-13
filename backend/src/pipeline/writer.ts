@@ -1,3 +1,5 @@
+// เขียน event ลงตาราง events (ที่เดียวในระบบที่เขียนตารางนี้)
+
 import { config } from '../config.js';
 import { enrichBatch } from '../enrich/index.js';
 import type { Queryable } from '../db/tenant.js';

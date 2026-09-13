@@ -1,3 +1,5 @@
+-- partition DEFAULT สำหรับ event ที่วันที่อยู่นอกช่วง partition ปกติ
+
 CREATE TABLE events_backfill PARTITION OF events DEFAULT;
 
 CREATE OR REPLACE FUNCTION purge_backfill_partition(p_keep_days integer)

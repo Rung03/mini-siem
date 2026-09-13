@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# รันระบบด้วยคำสั่งเดียว สำหรับเครื่องที่ไม่มี make (saas | appliance | down | clean)
 set -euo pipefail
 cd "$(dirname "$0")"
 

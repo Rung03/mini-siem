@@ -1,4 +1,5 @@
 #cloud-config
+# ติดตั้ง Docker, swap และ firewall บน VM ตอนบูตครั้งแรก
 
 package_update: true
 package_upgrade: true

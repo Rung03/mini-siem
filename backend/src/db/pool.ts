@@ -1,3 +1,5 @@
+// connection pool แยกตาม role ของฐานข้อมูล
+
 import pg from 'pg';
 import { config } from '../config.js';
 

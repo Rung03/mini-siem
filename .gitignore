@@ -1,3 +1,5 @@
+# ไฟล์ที่ไม่ commit: dependency, ผล build, .env และฐานข้อมูล GeoIP
+
 node_modules/
 dist/
 build/

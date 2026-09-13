@@ -1,3 +1,5 @@
+// ตัวช่วยของ parser: แยก key=value, แปลง IP/วันที่, ตัดหัว syslog, อ่าน JSON รูปแบบโจทย์
+
 import { isIP } from 'node:net';
 import type { CanonicalEvent, Outcome, ParserInput, Source, SourceType } from './schema.js';
 import { SOURCES, blankEvent } from './schema.js';

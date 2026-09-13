@@ -1,3 +1,5 @@
+// ตัวเรียก API ของ backend และ type ของข้อมูลที่รับส่ง
+
 export interface ApiUser {
   id: string;
   email: string;

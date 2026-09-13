@@ -1,3 +1,5 @@
+// แยกประเภท IP: public, private, loopback, link-local, reserved
+
 import { isIP } from 'node:net';
 
 export type IpClass = 'public' | 'private' | 'loopback' | 'link-local' | 'reserved';

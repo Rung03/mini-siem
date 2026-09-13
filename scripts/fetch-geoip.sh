@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# ดาวน์โหลดฐานข้อมูล GeoIP ของ DB-IP Lite ไว้ในโฟลเดอร์ geoip/
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

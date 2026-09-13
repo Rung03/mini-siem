@@ -1,3 +1,5 @@
+# stack หลัก: ฐานข้อมูล, backend และหน้าเว็บ (โหมด SaaS / เครื่องพัฒนา)
+
 services:
   db:
     image: postgres:17-alpine

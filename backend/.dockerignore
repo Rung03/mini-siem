@@ -1,3 +1,5 @@
+# ไฟล์ที่ไม่ส่งเข้า docker build ของ backend
+
 node_modules
 dist
 test

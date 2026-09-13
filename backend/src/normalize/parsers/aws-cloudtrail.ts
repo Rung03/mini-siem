@@ -1,3 +1,5 @@
+// แปลง log AWS CloudTrail
+
 import type { CanonicalEvent, Outcome, Parser } from '../schema.js';
 import { blankEvent, unparsed } from '../schema.js';
 import {

@@ -1,3 +1,5 @@
+// API กฎแจ้งเตือน: อ่าน สร้าง แก้ไข ลบ
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { auditIn } from '../../audit/log.js';

@@ -1,3 +1,5 @@
+// เติม hostname, ตำแหน่ง และ tag ให้ event ก่อนบันทึก
+
 import { config } from '../config.js';
 import type { CanonicalEvent } from '../normalize/schema.js';
 import { geoProvider } from './geoip.js';

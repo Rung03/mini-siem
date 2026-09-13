@@ -1,3 +1,5 @@
+// เทสต์ความปลอดภัย: แยก tenant ด้วย RLS และลบ log ไม่ได้ (ต้องมีฐานข้อมูล)
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { bootstrapRoles } from '../src/db/bootstrap.js';
 import { runMigrations } from '../src/db/migrate.js';

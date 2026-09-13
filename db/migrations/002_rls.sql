@@ -1,3 +1,5 @@
+-- สิทธิ์ของ role และ Row Level Security: แยกข้อมูล tenant และห้ามลบ log
+
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO siem_app, siem_admin, siem_evaluator;
 

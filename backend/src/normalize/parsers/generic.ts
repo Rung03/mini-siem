@@ -1,3 +1,5 @@
+// แปลง syslog ทั่วไปและ JSON จากแอปภายใน
+
 import type { CanonicalEvent, Outcome, Parser, ParserInput } from '../schema.js';
 import { blankEvent } from '../schema.js';
 import {

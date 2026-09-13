@@ -1,3 +1,5 @@
+// สะสม event จาก syslog เป็นก้อนก่อนเขียนลงฐานข้อมูล
+
 import { config } from '../config.js';
 import type { CanonicalEvent } from '../normalize/schema.js';
 import { insertEvents } from './writer.js';

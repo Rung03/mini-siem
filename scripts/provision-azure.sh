@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# สร้าง VM บน Azure พร้อม static IP และ firewall (NSG)
 set -euo pipefail
 
 RG="${RG:-mini-siem-rg}"

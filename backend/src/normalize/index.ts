@@ -1,3 +1,5 @@
+// เลือก parser ตามแหล่งข้อมูล และแปลง log เป็นโครงสร้างกลาง
+
 import { parseAwsCloudtrail } from './parsers/aws-cloudtrail.js';
 import { parseCrowdstrike } from './parsers/crowdstrike.js';
 import { parseFortigate } from './parsers/fortigate.js';

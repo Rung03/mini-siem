@@ -1,3 +1,5 @@
+// API ผู้ดูแล: tenant, ผู้ใช้, audit trail, ingest ที่ถูกปฏิเสธ และ partition
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { auditIn } from '../../audit/log.js';

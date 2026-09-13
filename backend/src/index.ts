@@ -1,3 +1,5 @@
+// จุดเริ่มระบบ: สร้าง role, รัน migration, เปิด API, syslog และตัวตรวจกฎแจ้งเตือน
+
 import type { Server } from 'node:http';
 import { createApp } from './api/app.js';
 import { startAlertLoop } from './alerting/evaluator.js';

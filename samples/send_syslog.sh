@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# ส่ง syslog ตัวอย่างเข้าพอร์ต 514 (--brute ส่งชุดที่ทำให้เกิด alert)
 set -euo pipefail
 
 HOST="${SYSLOG_HOST:-127.0.0.1}"

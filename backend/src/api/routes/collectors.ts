@@ -1,3 +1,5 @@
+// API collector: สร้าง แก้ไข และหมุน token
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { auditIn } from '../../audit/log.js';

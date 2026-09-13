@@ -1,3 +1,5 @@
+// แปลง log CrowdStrike Falcon (audit และ detection)
+
 import type { CanonicalEvent, Outcome, Parser } from '../schema.js';
 import { blankEvent, unparsed } from '../schema.js';
 import {

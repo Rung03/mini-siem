@@ -1,3 +1,5 @@
+// คำสั่ง npm run migrate: สร้าง role, รัน migration และสร้าง partition
+
 import { bootstrapRoles } from './bootstrap.js';
 import { runMigrations } from './migrate.js';
 import { ensurePartitions } from './partitions.js';

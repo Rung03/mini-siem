@@ -1,3 +1,5 @@
+-- คอลัมน์ตาม schema กลางของโจทย์ และ severity สเกล 0-10
+
 ALTER TABLE events
   ADD COLUMN source            text,
   ADD COLUMN vendor            text,

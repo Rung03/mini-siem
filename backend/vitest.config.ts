@@ -1,3 +1,5 @@
+// ตั้งค่าเทสต์: รันทีละไฟล์เพราะใช้ฐานข้อมูลร่วมกัน
+
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({

@@ -1,3 +1,5 @@
+// ค้นหาประเทศ เมือง และ ASN จากไฟล์ GeoIP ในเครื่อง
+
 import { existsSync } from 'node:fs';
 import { config } from '../config.js';
 

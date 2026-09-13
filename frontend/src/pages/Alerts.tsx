@@ -1,3 +1,5 @@
+// หน้ารายการ alert และปุ่ม Acknowledge
+
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, qs, type Alert, type ApiUser } from '../api/client.js';

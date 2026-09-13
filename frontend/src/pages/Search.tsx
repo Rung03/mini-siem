@@ -1,3 +1,5 @@
+// หน้าค้นหา event ข้ามทุกแหล่ง พร้อมตัวกรองและดู payload ดิบ
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { SOURCES, api, qs, type ApiUser, type SiemEvent } from '../api/client.js';

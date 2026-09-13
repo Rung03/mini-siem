@@ -1,3 +1,5 @@
+// ประกอบ Express app: header ความปลอดภัย, ingest, route ทั้งหมด และ error handler
+
 import express, { type Express } from 'express';
 import { config } from '../config.js';
 import { attachActor, requireAuth, requireJsonMutation } from '../auth/rbac.js';

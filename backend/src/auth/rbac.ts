@@ -1,3 +1,5 @@
+// ตรวจ session, สิทธิ์ Admin/Viewer, IP จริงของผู้ใช้ และบังคับ JSON กัน CSRF
+
 import type { NextFunction, Request, Response } from 'express';
 import type { Actor } from '../db/tenant.js';
 import { lookupSession, readSessionCookie } from './session.js';

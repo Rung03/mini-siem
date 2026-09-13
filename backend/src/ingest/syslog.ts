@@ -1,3 +1,5 @@
+// รับ syslog ผ่าน UDP และ TCP พอร์ต 514
+
 import dgram from 'node:dgram';
 import net from 'node:net';
 import { config } from '../config.js';

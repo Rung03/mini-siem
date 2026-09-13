@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ส่ง JSON ตัวอย่างเข้า POST /ingest (--simulate สร้าง traffic สุ่ม)
 """Posts the sample JSON payloads to the HTTP ingest endpoint.
 
     python post_logs.py --token sk_xxx                 # every JSON sample

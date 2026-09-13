@@ -1,3 +1,5 @@
+// เทสต์ enrichment: event ต้องไม่หายแม้ GeoIP หรือ DNS มีปัญหา
+
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   classifyIp,

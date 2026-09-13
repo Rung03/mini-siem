@@ -1,3 +1,5 @@
+// ดูแล partition: สร้างล่วงหน้า, ลบที่เกินอายุ, ล้าง session หมดอายุ
+
 import { config } from '../config.js';
 import { withOwner } from './tenant.js';
 

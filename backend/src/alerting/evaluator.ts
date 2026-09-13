@@ -1,3 +1,5 @@
+// ตรวจกฎแจ้งเตือนทุก 30 วินาที และสร้าง alert เมื่อเกินเกณฑ์
+
 import { config } from '../config.js';
 import { withEvaluator } from '../db/tenant.js';
 import { deliverPendingWebhooks } from './webhook.js';

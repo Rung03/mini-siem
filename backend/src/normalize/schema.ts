@@ -1,3 +1,5 @@
+// นิยามโครงสร้างกลางของ event (CanonicalEvent) และค่าเริ่มต้น
+
 export const SOURCE_TYPES = [
   'fortigate',
   'windows_ad',

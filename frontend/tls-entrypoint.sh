@@ -1,4 +1,5 @@
 #!/bin/sh
+# สร้างใบรับรอง self-signed ตอน container เริ่ม ถ้ายังไม่มี
 set -e
 
 CERT_DIR=/etc/nginx/certs

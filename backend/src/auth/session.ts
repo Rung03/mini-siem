@@ -1,3 +1,5 @@
+// จัดการ session: สร้าง ตรวจ ยกเลิก และ cookie
+
 import { createHash, randomBytes } from 'node:crypto';
 import type { Response } from 'express';
 import { config } from '../config.js';

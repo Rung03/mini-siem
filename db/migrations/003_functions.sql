@@ -1,3 +1,5 @@
+-- ฟังก์ชันล็อกอิน, session, หา collector และจัดการ partition
+
 CREATE FUNCTION auth_find_user(p_email text)
   RETURNS TABLE (id uuid, tenant_id uuid, email text, password_hash text,
                  role text, active boolean)

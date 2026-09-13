@@ -1,3 +1,5 @@
+// เทสต์ parser ของทุกแหล่งข้อมูล
+
 import { describe, expect, it } from 'vitest';
 import { normalize } from '../src/normalize/index.js';
 import type { SourceType } from '../src/normalize/schema.js';

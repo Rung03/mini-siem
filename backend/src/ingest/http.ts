@@ -1,3 +1,5 @@
+// รับ log ผ่าน POST /ingest ด้วย bearer token
+
 import { Router } from 'express';
 import express from 'express';
 import { config } from '../config.js';

@@ -1,3 +1,5 @@
+// โครงแอป: ตรวจการล็อกอิน, แถบเมนูข้าง และเส้นทางของแต่ละหน้า
+
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';

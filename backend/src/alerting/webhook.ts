@@ -1,3 +1,5 @@
+// ส่ง alert ที่รอส่งออกไปยัง webhook พร้อมลองซ้ำ
+
 import { config } from '../config.js';
 import { withEvaluator } from '../db/tenant.js';
 

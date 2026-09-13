@@ -1,3 +1,5 @@
+// API เข้าสู่ระบบ ออกจากระบบ และข้อมูลผู้ใช้ปัจจุบัน
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { audit } from '../../audit/log.js';

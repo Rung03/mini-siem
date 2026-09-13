@@ -1,3 +1,5 @@
+# Caddy: ขอและต่ออายุใบรับรอง Let's Encrypt แล้วส่งต่อให้ nginx
+
 {
 	email {$LETSENCRYPT_EMAIL}
 }

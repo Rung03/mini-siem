@@ -1,3 +1,5 @@
+// บันทึกการกระทำของผู้ดูแลลง audit_log
+
 import type { Actor, Queryable } from '../db/tenant.js';
 import { withActor } from '../db/tenant.js';
 

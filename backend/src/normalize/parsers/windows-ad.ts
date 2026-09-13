@@ -1,3 +1,5 @@
+// แปลง log Windows Security (Event 4624 / 4625)
+
 import type { CanonicalEvent, Outcome, Parser } from '../schema.js';
 import { blankEvent, unparsed } from '../schema.js';
 import {

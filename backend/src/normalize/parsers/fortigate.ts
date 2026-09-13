@@ -1,3 +1,5 @@
+// แปลง log firewall แบบ key=value (FortiGate และรูปแบบทั่วไป)
+
 import type { CanonicalEvent, Outcome, Parser } from '../schema.js';
 import { blankEvent, unparsed } from '../schema.js';
 import {

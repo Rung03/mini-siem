@@ -1,3 +1,5 @@
+// ตั้งค่า Vite: build หน้าเว็บ และ proxy /api ไป backend ตอนพัฒนา
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

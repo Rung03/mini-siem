@@ -1,3 +1,5 @@
+-- คอลัมน์ enrichment: hostname, ประเทศ, เมือง, ASN
+
 ALTER TABLE events
   ADD COLUMN src_hostname     text,
   ADD COLUMN geo_country_iso  text,

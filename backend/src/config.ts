@@ -1,3 +1,5 @@
+// อ่านและตรวจค่า environment ทั้งหมด รวมเป็น object config
+
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

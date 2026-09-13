@@ -1,3 +1,5 @@
+// reverse DNS แบบใช้ cache ไม่ทำให้การรับ log ช้าลง
+
 import dns from 'node:dns';
 import { config } from '../config.js';
 

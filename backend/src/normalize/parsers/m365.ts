@@ -1,3 +1,5 @@
+// แปลง log Microsoft 365 Unified Audit
+
 import type { CanonicalEvent, Outcome, Parser } from '../schema.js';
 import { blankEvent, unparsed } from '../schema.js';
 import {

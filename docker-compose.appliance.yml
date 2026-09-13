@@ -1,3 +1,5 @@
+# overlay โหมด Appliance: ผูกพอร์ตกับ 127.0.0.1 และปิด webhook
+
 services:
   db:
     ports: !override

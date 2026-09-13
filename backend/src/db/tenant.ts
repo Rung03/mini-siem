@@ -1,3 +1,5 @@
+// ทางเข้าฐานข้อมูลทางเดียว: เปิด transaction ด้วย role ที่ถูกต้องและปักหมุด tenant
+
 import type { QueryResult, QueryResultRow } from 'pg';
 import { pool } from './pool.js';
 
