@@ -11,6 +11,7 @@
 | `ratelimit.test.ts` | rate limit และการล็อกบัญชีเมื่อรหัสผิดซ้ำ | ไม่ |
 | `metrics.test.ts` | รูปแบบ Prometheus ของ `/api/metrics` | ไม่ |
 | `timestamps.test.ts` | ขยับเวลาของ sample ที่เก่ากว่า retention | ไม่ |
+| `filter.test.ts` | ตัวกรองที่ dashboard ใช้ตอนคลิก (ตรงตัว, AND, บังคับ tenant) | ไม่ |
 | `isolation.test.ts` | **RLS แยก tenant, ลบ log ไม่ได้แม้เป็น Admin, ไม่มี role ไหน BYPASSRLS** | ใช่ |
 
 ## รัน
@@ -21,6 +22,6 @@ cd backend && npm install
 POSTGRES_HOST=localhost POSTGRES_PORT=5433 npm test
 ```
 
-ต้องได้ `102 passed` ถ้าขึ้น `90 passed | 12 skipped` แปลว่าต่อฐานข้อมูลไม่ได้ และเทสต์ความปลอดภัยไม่ได้รัน
+ต้องได้ `105 passed` ถ้าขึ้น `93 passed | 12 skipped` แปลว่าต่อฐานข้อมูลไม่ได้ และเทสต์ความปลอดภัยไม่ได้รัน
 
 หรือ `make test` จาก root

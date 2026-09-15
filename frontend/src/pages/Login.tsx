@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client.js';
+import { LogoCube } from '../components/icons.js';
 
 export function Login() {
   const queryClient = useQueryClient();
@@ -27,8 +28,16 @@ export function Login() {
 
   return (
     <div className="login-wrap">
+      <span className="orb a" aria-hidden="true" />
+      <span className="orb b" aria-hidden="true" />
       <div className="card login-card">
-        <h1>Mini SIEM</h1>
+        <div className="login-brand">
+          <LogoCube size={42} />
+          <div>
+            <h1>Mini SIEM</h1>
+            <span>Security event monitoring</span>
+          </div>
+        </div>
 
         {error && <div className="error">{error}</div>}
 

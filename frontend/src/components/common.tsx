@@ -1,6 +1,13 @@
-// ส่วนประกอบใช้ซ้ำ: เลือกช่วงเวลา, เลือก tenant, การ์ดตัวเลข, จัดรูปแบบเวลา
+// ส่วนประกอบใช้ซ้ำ: เลือกช่วงเวลา, เลือก tenant, การ์ดตัวเลขแบบเอียง 3D, จัดรูปแบบเวลา
 
-import { useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type ApiUser, type Tenant } from '../api/client.js';
 
@@ -86,25 +93,130 @@ export function Outcome({ value }: { value: string }) {
   return <span className={`pill ${cls}`}>{value}</span>;
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+export function useCountUp(target: number, durationMs = 750): number {
+  const [shown, setShown] = useState(0);
+  const current = useRef(0);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) {
+      current.current = target;
+      setShown(target);
+      return;
+    }
+    const origin = current.current;
+    const start = performance.now();
+    let frame = 0;
+    const step = (now: number) => {
+      const t = Math.min((now - start) / durationMs, 1);
+      const value = Math.round(origin + (target - origin) * (1 - Math.pow(1 - t, 3)));
+      current.current = value;
+      setShown(value);
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [target, durationMs]);
+
+  return shown;
+}
+
+export function Tilt({
+  children,
+  className,
+  max = 7,
+  ...rest
+}: {
+  children: ReactNode;
+  className?: string;
+  max?: number;
+} & HTMLAttributes<HTMLDivElement>) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const move = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!el || prefersReducedMotion()) return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    el.style.setProperty('--rx', `${((0.5 - y) * max).toFixed(2)}deg`);
+    el.style.setProperty('--ry', `${((x - 0.5) * max).toFixed(2)}deg`);
+    el.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+    el.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+  };
+
+  const reset = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.setProperty('--rx', '0deg');
+    el.style.setProperty('--ry', '0deg');
+  };
+
+  return (
+    <div
+      {...rest}
+      ref={ref}
+      className={`tilt${className ? ` ${className}` : ''}`}
+      onPointerMove={move}
+      onPointerLeave={reset}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function StatCard({
   label,
   value,
-  tone,
+  tone = 'accent',
   sub,
+  icon,
+  index = 0,
+  active = false,
+  hint,
+  onClick,
 }: {
   label: string;
-  value: number | string;
-  tone?: 'success' | 'failure';
+  value: number;
+  tone?: 'success' | 'failure' | 'accent' | 'info';
   sub?: string;
+  icon?: ReactNode;
+  index?: number;
+  active?: boolean;
+  hint?: string;
+  onClick?: () => void;
 }) {
+  const shown = useCountUp(value);
+  const interactive = onClick !== undefined;
+
   return (
-    <div className="card stat">
-      <span className="label">{label}</span>
-      <span className={`value${tone ? ` ${tone}` : ''}`}>
-        {typeof value === 'number' ? value.toLocaleString() : value}
-      </span>
+    <Tilt
+      className={`card stat tone-${tone} enter${interactive ? ' clickable' : ''}${active ? ' active' : ''}`}
+      style={{ '--i': index } as CSSProperties}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-pressed={interactive ? active : undefined}
+      title={hint}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (interactive && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+    >
+      <div className="stat-top">
+        <span className="label">{label}</span>
+        {icon && <span className="stat-icon">{icon}</span>}
+      </div>
+      <span className="value">{shown.toLocaleString()}</span>
       {sub && <span className="sub">{sub}</span>}
-    </div>
+      {active && <span className="stat-flag">Filtering</span>}
+      <span className="stat-bar" aria-hidden="true" />
+    </Tilt>
   );
 }
 

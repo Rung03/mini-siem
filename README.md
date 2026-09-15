@@ -203,7 +203,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | ไฟล์ | endpoint | สิทธิ์ |
 |---|---|---|
 | `auth.ts` | `POST /auth/login` (รหัสผิดครบ `LOGIN_LOCKOUT_THRESHOLD` ครั้ง → ล็อก ตอบ 429) · `POST /auth/logout` · `GET /auth/me` | ทุกคน |
-| `events.ts` | `GET /events` (ค้นหา, แบ่งหน้าแบบ cursor) · `GET /events/:id/raw` | ผู้ที่ล็อกอิน |
+| `events.ts` | `GET /events` (ค้นหา, แบ่งหน้าแบบ cursor — `user` ค้นบางส่วน, `user_exact` ตรงตัวสำหรับการคลิกกรอง) · `GET /events/:id/raw` | ผู้ที่ล็อกอิน |
 | `stats.ts` | `GET /stats/summary` · `/timeseries` · `/top` · `/sources` | ผู้ที่ล็อกอิน |
 | `alerts.ts` | `GET /alerts` · `POST /alerts/:id/ack` | ผู้ที่ล็อกอิน |
 | `rules.ts` | อ่านกฎ / สร้าง แก้ ลบ (กฎที่มีประวัติ alert จะถูกปิดแทนการลบ) | อ่าน: ทุกคน · แก้: Admin |
@@ -227,6 +227,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | `test/isolation.test.ts` | **เทสต์ความปลอดภัย** จงใจเขียน query ผิดเพื่อพิสูจน์ว่า RLS กันข้าม tenant และลบ log ไม่ได้แม้เป็น Admin (ต้องมีฐานข้อมูล) |
 | `test/ratelimit.test.ts` | เทสต์ rate limit และการล็อกบัญชี: ครบเกณฑ์แล้วปฏิเสธ, หมดเวลาแล้วปล่อย, หน่วยความจำไม่บานเมื่อ IP ท่วม |
 | `test/metrics.test.ts` | เทสต์รูปแบบข้อความ Prometheus |
+| `test/filter.test.ts` | เทสต์ตัวกรอง: `user_exact` ตรงตัว, `user` บางส่วน, ทุกตัวกรองต่อด้วย AND และ Viewer ถูกบังคับ tenant เสมอ |
 | `test/timestamps.test.ts` | เทสต์การขยับเวลา: เก่ากว่า retention ถูกขยับโดยระยะห่างเท่าเดิม, ของใหม่ไม่ถูกแตะ, `raw` ไม่เปลี่ยน |
 | `vitest.config.ts` | ตั้งค่าเทสต์ ไม่รันพร้อมกันเพราะใช้ฐานข้อมูลร่วม |
 | `README.md` | วิธีรัน backend และเทสต์ |
@@ -242,13 +243,16 @@ migration รันครั้งเดียวตามลำดับเล�
 | `main.tsx` | จุดเริ่มแอป ตั้ง React Query ให้ดึงข้อมูลใหม่ทุก 30 วิ |
 | `App.tsx` | ตรวจว่าล็อกอินหรือยัง, แถบข้างแบบติดหน้าจอ, ปุ่ม Sign out, กำหนด route |
 | `api/client.ts` | ตัวเรียก API: ส่ง cookie ทุกครั้ง, ใส่ `content-type: application/json` ทุก mutation, อัปโหลดไฟล์, type ของข้อมูลทุกชนิด |
-| `components/common.tsx` | ส่วนประกอบใช้ซ้ำ: เลือกช่วงเวลา, เลือก tenant (Admin เท่านั้น), การ์ดตัวเลข, ป้ายผลลัพธ์, จัดรูปแบบเวลา |
+| `components/common.tsx` | ส่วนประกอบใช้ซ้ำ: เลือกช่วงเวลา, เลือก tenant (Admin เท่านั้น), การ์ดตัวเลขเอียง 3D ที่คลิกได้และนับเลขขึ้น (`Tilt` `useCountUp`), ป้ายผลลัพธ์, จัดรูปแบบเวลา |
+| `components/SourceBars3D.tsx` | คอลัมน์ 3D จำนวน event ต่อแหล่ง คลิกหรือกด Enter เพื่อกรอง |
+| `components/icons.tsx` | ไอคอน SVG ของเมนู/การ์ด และโลโก้ลูกบาศก์ |
+| `theme.ts` | สีกราฟ (hex) ที่ผ่านตัวตรวจสีบนพื้นขาว: ฟ้า = สำเร็จ, แดง = ล้มเหลว, ม่วง = คอลัมน์ — คู่ฟ้า/แดงแยกได้แม้ตาบอดสี |
 | `pages/Login.tsx` | หน้าเข้าสู่ระบบ |
-| `pages/Dashboard.tsx` | การ์ดสรุป, กราฟเส้นตามเวลา, อันดับผู้ใช้ / IP / ประเภทเหตุการณ์ / ประเทศ, รายการล่าสุด |
+| `pages/Dashboard.tsx` | **คลิกกรองทั้งหน้า**: การ์ด Successful/Failed กรองผลลัพธ์, คอลัมน์กรองแหล่ง, แถว Top N กรองผู้ใช้ / IP / ประเภท / ประเทศ, เซลล์ใน Recent events — ตัวกรองแสดงเป็น chip ลบทีละตัวหรือ Clear all ได้ แต่ละตาราง Top N ไม่กรองด้วยมิติของตัวเองจึงสลับค่าได้ในคลิกเดียว |
 | `pages/Search.tsx` | ค้นหาข้ามทุกแหล่ง กรองตามเวลา ผลลัพธ์ แหล่ง ผู้ใช้ IP/CIDR ประเทศ และเปิดดู payload ดิบได้ |
 | `pages/Alerts.tsx` | รายการ alert และปุ่ม Acknowledge |
 | `pages/Admin.tsx` | จัดการ collector (สร้าง, ปิด, หมุน token, อัปโหลดไฟล์), กฎ, ผู้ใช้, tenant, audit trail, partition |
-| `styles.css` | ธีมขาวมินิมอล |
+| `styles.css` | ธีมสว่างแบบมีมิติ: การ์ดลอยเงาซ้อน, แสงพื้นหลังเคลื่อนไหว, แอนิเมชันเข้าหน้า/คอลัมน์โต/แถบวัด, chip ตัวกรองติดขอบบน — ปิดการเคลื่อนไหวทั้งหมดเมื่อระบบตั้ง `prefers-reduced-motion` |
 
 **ไฟล์ตั้งค่า frontend**
 

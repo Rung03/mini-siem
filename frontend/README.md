@@ -6,7 +6,7 @@ React 18 + Vite + TanStack Query + Recharts build เป็นไฟล์ stati
 
 | หน้า | ไฟล์ | ทำอะไร |
 |---|---|---|
-| Dashboard | `src/pages/Dashboard.tsx` | การ์ดสรุป, Timeline, Top ผู้ใช้ / IP / ประเภท / ประเทศ, กรองตาม tenant / source / ช่วงเวลา |
+| Dashboard | `src/pages/Dashboard.tsx` | การ์ดสรุปเอียง 3D, Timeline, คอลัมน์ 3D ต่อแหล่ง, Top ผู้ใช้ / IP / ประเภท / ประเทศ — **คลิกการ์ด คอลัมน์ แถว หรือเซลล์เพื่อกรองทั้งหน้า** ตัวกรองแสดงเป็น chip ลบได้ |
 | Search | `src/pages/Search.tsx` | ค้นข้ามทุกแหล่ง กรองตามเวลา ผลลัพธ์ แหล่ง ผู้ใช้ IP/CIDR ประเทศ และดู payload ดิบ |
 | Alerts | `src/pages/Alerts.tsx` | รายการ alert และ Acknowledge |
 | Administration | `src/pages/Admin.tsx` | collector, กฎ, ผู้ใช้, tenant, audit, partition |

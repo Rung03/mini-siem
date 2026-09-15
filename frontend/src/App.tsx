@@ -4,6 +4,14 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { ApiError, api, setUnauthorizedHandler, type ApiUser } from './api/client.js';
+import {
+  IconAdmin,
+  IconAlert,
+  IconDashboard,
+  IconLogout,
+  IconSearch,
+  LogoCube,
+} from './components/icons.js';
 import { Admin } from './pages/Admin.js';
 import { Alerts } from './pages/Alerts.js';
 import { Dashboard } from './pages/Dashboard.js';
@@ -43,21 +51,31 @@ function Shell({ user }: { user: ApiUser }) {
   return (
     <div className="app">
       <nav className="sidebar">
-        <div className="brand">Mini SIEM</div>
+        <div className="brand">
+          <LogoCube />
+          <div>
+            <strong>Mini SIEM</strong>
+            <span>Security analytics</span>
+          </div>
+        </div>
 
-        <NavLink to="/" end className="nav-link">Dashboard</NavLink>
-        <NavLink to="/search" className="nav-link">Search</NavLink>
-        <NavLink to="/alerts" className="nav-link">Alerts</NavLink>
+        <NavLink to="/" end className="nav-link"><IconDashboard /><span>Dashboard</span></NavLink>
+        <NavLink to="/search" className="nav-link"><IconSearch /><span>Search</span></NavLink>
+        <NavLink to="/alerts" className="nav-link"><IconAlert /><span>Alerts</span></NavLink>
         {user.role === 'admin' && (
-          <NavLink to="/admin" className="nav-link">Administration</NavLink>
+          <NavLink to="/admin" className="nav-link"><IconAdmin /><span>Administration</span></NavLink>
         )}
 
         <div className="sidebar-footer">
-          <strong>{user.email}</strong>
-          <div style={{ margin: '2px 0 10px' }}>
-            {user.role === 'admin' ? 'Admin — all tenants' : 'Viewer — own tenant'}
+          <div className="who">
+            <span className="avatar" aria-hidden="true">{user.email.slice(0, 1).toUpperCase()}</span>
+            <div>
+              <strong>{user.email}</strong>
+              {user.role === 'admin' ? 'Admin — all tenants' : 'Viewer — own tenant'}
+            </div>
           </div>
-          <button onClick={() => void signOut()} style={{ width: '100%' }}>
+          <button onClick={() => void signOut()}>
+            <IconLogout />
             Sign out
           </button>
         </div>

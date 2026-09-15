@@ -19,6 +19,7 @@ const baseQuery = z.object({
   action: z.string().max(64).optional(),
   country: z.string().length(2).optional(),
   user: z.string().max(320).optional(),
+  user_exact: z.string().max(320).optional(),
   ip: z.string().max(64).optional(),
   host: z.string().max(255).optional(),
   category: z.string().max(64).optional(),

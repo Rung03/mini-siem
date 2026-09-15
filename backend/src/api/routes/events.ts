@@ -19,6 +19,7 @@ const query = z.object({
   action: z.string().max(64).optional(),
   country: z.string().length(2).optional(),
   user: z.string().max(320).optional(),
+  user_exact: z.string().max(320).optional(),
   ip: z.string().max(64).optional(),
   host: z.string().max(255).optional(),
   category: z.string().max(64).optional(),
@@ -62,6 +63,7 @@ export function buildFilter(
   if (input.category) clauses.push(`event_category = ${push(input.category)}`);
   if (input.host) clauses.push(`host = ${push(input.host)}`);
   if (input.user) clauses.push(`user_name ILIKE ${push(`%${input.user}%`)}`);
+  if (input.user_exact) clauses.push(`user_name = ${push(input.user_exact)}`);
 
   if (input.ip) {
     const isCidr = input.ip.includes('/');
