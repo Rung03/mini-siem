@@ -1,8 +1,8 @@
 // เทสต์ parser ของทุกแหล่งข้อมูล
 
 import { describe, expect, it } from 'vitest';
-import { normalize } from '../src/normalize/index.js';
-import type { SourceType } from '../src/normalize/schema.js';
+import { normalize } from '../backend/src/normalize/index.js';
+import type { SourceType } from '../backend/src/normalize/schema.js';
 
 const receivedAt = new Date('2026-09-12T12:00:00Z');
 

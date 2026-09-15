@@ -1,6 +1,6 @@
 # Tests
 
-ไฟล์เทสต์อยู่ที่ [`../backend/test/`](../backend/test/) ใช้ Vitest และรันใน CI ทุก push (`.github/workflows/ci.yml`)
+ไฟล์เทสต์ทั้งหมดอยู่ในโฟลเดอร์นี้ ใช้ Vitest ที่ติดตั้งใน `backend/` (ตั้งค่าที่ [`backend/vitest.config.ts`](../backend/vitest.config.ts)) และรันใน CI ทุก push (`.github/workflows/ci.yml`)
 
 | ไฟล์ | ทดสอบอะไร | ต้องมีฐานข้อมูล |
 |---|---|---|

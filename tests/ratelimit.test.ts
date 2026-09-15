@@ -1,7 +1,7 @@
 // เทสต์ตัวจำกัดจำนวนคำขอและการล็อกบัญชีเมื่อล็อกอินผิดซ้ำ
 
 import { describe, expect, it } from 'vitest';
-import { FixedWindowLimiter, LoginLockout } from '../src/api/ratelimit.js';
+import { FixedWindowLimiter, LoginLockout } from '../backend/src/api/ratelimit.js';
 
 const MINUTE = 60_000;
 

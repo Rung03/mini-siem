@@ -8,9 +8,9 @@ import {
   EQUIVALENT_EARLIER_CHECKSUMS,
   checksum,
   compareChecksum,
-} from '../src/db/checksums.js';
+} from '../backend/src/db/checksums.js';
 
-const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../db/migrations');
+const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../db/migrations');
 const files = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
 const current = (f: string) => checksum(readFileSync(path.join(dir, f), 'utf8'));
 

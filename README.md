@@ -220,16 +220,16 @@ migration รันครั้งเดียวตามลำดับเล�
 | `src/config.ts` | อ่านและตรวจค่า environment ทั้งหมดด้วย zod รวมเป็น object `config` ที่เดียว |
 | `src/observability/metrics.ts` | ตัวนับ Prometheus: event ที่เขียน, ที่แปลงไม่ได้, ที่ถูกทิ้ง, alert, คำขอที่โดน rate limit, ผลการล็อกอิน, คิว batcher — อ่านที่ `GET /api/metrics` (Admin หรือ `METRICS_TOKEN`) |
 | `tools/seed.ts` | สร้างข้อมูลเดโม: 2 tenant, ผู้ใช้, collector, กฎแจ้งเตือน, traffic 24 ชม. และชุดเดารหัสผ่านที่ทำให้เกิด alert — สร้าง payload ดิบของแต่ละแหล่งแล้วส่งผ่าน parser จริง |
-| `test/parsers.test.ts` | เทสต์ parser ทุกแหล่ง รวม sample ข้อ 4.1–4.7 ของโจทย์ |
-| `test/migrate.test.ts` | เทสต์ว่า checksum เดิมก่อนลบ comment ยังถูกยอมรับ และ migration ที่ถูกแก้จริงยังถูกปฏิเสธ |
-| `test/login-event.test.ts` | เทสต์ event ของการล็อกอินหน้าเว็บ และยืนยันว่าไม่มีรหัสผ่านใน event |
-| `test/enrich.test.ts` | เทสต์ enrichment: ไฟล์ GeoIP หาย, provider พัง, DNS ค้าง — event ต้องรอดทุกกรณี |
-| `test/isolation.test.ts` | **เทสต์ความปลอดภัย** จงใจเขียน query ผิดเพื่อพิสูจน์ว่า RLS กันข้าม tenant และลบ log ไม่ได้แม้เป็น Admin (ต้องมีฐานข้อมูล) |
-| `test/ratelimit.test.ts` | เทสต์ rate limit และการล็อกบัญชี: ครบเกณฑ์แล้วปฏิเสธ, หมดเวลาแล้วปล่อย, หน่วยความจำไม่บานเมื่อ IP ท่วม |
-| `test/metrics.test.ts` | เทสต์รูปแบบข้อความ Prometheus |
-| `test/filter.test.ts` | เทสต์ตัวกรอง: `user_exact` ตรงตัว, `user` บางส่วน, ทุกตัวกรองต่อด้วย AND และ Viewer ถูกบังคับ tenant เสมอ |
-| `test/timestamps.test.ts` | เทสต์การขยับเวลา: เก่ากว่า retention ถูกขยับโดยระยะห่างเท่าเดิม, ของใหม่ไม่ถูกแตะ, `raw` ไม่เปลี่ยน |
-| `vitest.config.ts` | ตั้งค่าเทสต์ ไม่รันพร้อมกันเพราะใช้ฐานข้อมูลร่วม |
+| `../tests/parsers.test.ts` | เทสต์ parser ทุกแหล่ง รวม sample ข้อ 4.1–4.7 ของโจทย์ |
+| `../tests/migrate.test.ts` | เทสต์ว่า checksum เดิมก่อนลบ comment ยังถูกยอมรับ และ migration ที่ถูกแก้จริงยังถูกปฏิเสธ |
+| `../tests/login-event.test.ts` | เทสต์ event ของการล็อกอินหน้าเว็บ และยืนยันว่าไม่มีรหัสผ่านใน event |
+| `../tests/enrich.test.ts` | เทสต์ enrichment: ไฟล์ GeoIP หาย, provider พัง, DNS ค้าง — event ต้องรอดทุกกรณี |
+| `../tests/isolation.test.ts` | **เทสต์ความปลอดภัย** จงใจเขียน query ผิดเพื่อพิสูจน์ว่า RLS กันข้าม tenant และลบ log ไม่ได้แม้เป็น Admin (ต้องมีฐานข้อมูล) |
+| `../tests/ratelimit.test.ts` | เทสต์ rate limit และการล็อกบัญชี: ครบเกณฑ์แล้วปฏิเสธ, หมดเวลาแล้วปล่อย, หน่วยความจำไม่บานเมื่อ IP ท่วม |
+| `../tests/metrics.test.ts` | เทสต์รูปแบบข้อความ Prometheus |
+| `../tests/filter.test.ts` | เทสต์ตัวกรอง: `user_exact` ตรงตัว, `user` บางส่วน, ทุกตัวกรองต่อด้วย AND และ Viewer ถูกบังคับ tenant เสมอ |
+| `../tests/timestamps.test.ts` | เทสต์การขยับเวลา: เก่ากว่า retention ถูกขยับโดยระยะห่างเท่าเดิม, ของใหม่ไม่ถูกแตะ, `raw` ไม่เปลี่ยน |
+| `vitest.config.ts` | ตั้งค่าเทสต์: หาไฟล์ใน `/tests` ของ repo และไม่รันพร้อมกันเพราะใช้ฐานข้อมูลร่วม |
 | `README.md` | วิธีรัน backend และเทสต์ |
 | `tsconfig.json` · `package.json` | ตั้งค่า TypeScript และ dependency |
 | `Dockerfile` | build 2 ขั้น: compile TypeScript แล้วสร้าง image เบาพร้อมไฟล์ migration |
@@ -393,8 +393,8 @@ migration รันครั้งเดียวตามลำดับเล�
 
 | ไฟล์ | เนื้อหา |
 |---|---|
-| [`RUNBOOK.md`](RUNBOOK.md) | คู่มือรันและตรวจสอบระบบ |
-| [`ไฟล์อธิบายการเปิดข้อมูลต่างๆ.md`](ไฟล์อธิบายการเปิดข้อมูลต่างๆ.md) | วิธีเปิดระบบ และเข้าดูข้อมูลดิบ: ฐานข้อมูล, API, log, ไฟล์ตัวอย่าง, ใบรับรอง |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | คู่มือรันและตรวจสอบระบบ |
+| [`docs/ไฟล์อธิบายการเปิดข้อมูลต่างๆ.md`](docs/ไฟล์อธิบายการเปิดข้อมูลต่างๆ.md) | วิธีเปิดระบบ และเข้าดูข้อมูลดิบ: ฐานข้อมูล, API, log, ไฟล์ตัวอย่าง, ใบรับรอง |
 | [`docs/architecture.md`](docs/architecture.md) | สถาปัตยกรรม, data flow, tenant model, เหตุผลการเลือกเทคโนโลยี |
 | [`docs/setup_appliance.md`](docs/setup_appliance.md) | ติดตั้งแบบ appliance ทีละขั้น |
 | [`docs/setup_saas.md`](docs/setup_saas.md) | ติดตั้งแบบ SaaS ทีละขั้น |

@@ -1,7 +1,7 @@
 // เทสต์ event ของการล็อกอินหน้าเว็บ
 
 import { describe, expect, it } from 'vitest';
-import { buildLoginEvent } from '../src/auth/login-event.js';
+import { buildLoginEvent } from '../backend/src/auth/login-event.js';
 
 const at = new Date('2026-09-13T08:00:00Z');
 

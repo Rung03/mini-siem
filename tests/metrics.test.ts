@@ -1,7 +1,7 @@
 // เทสต์รูปแบบข้อความ Prometheus ของ /api/metrics
 
 import { describe, expect, it } from 'vitest';
-import { Counter, registerGauge, renderMetrics } from '../src/observability/metrics.js';
+import { Counter, registerGauge, renderMetrics } from '../backend/src/observability/metrics.js';
 
 describe('metrics exposition', () => {
   it('renders counters with sorted and escaped labels', () => {

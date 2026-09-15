@@ -1,12 +1,12 @@
 // เทสต์ความปลอดภัย: แยก tenant ด้วย RLS และลบ log ไม่ได้ (ต้องมีฐานข้อมูล)
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { bootstrapRoles } from '../src/db/bootstrap.js';
-import { runMigrations } from '../src/db/migrate.js';
-import { closeAllPools } from '../src/db/pool.js';
-import { withAdmin, withApp, withOwner, withUnscopedApp } from '../src/db/tenant.js';
-import { normalize } from '../src/normalize/index.js';
-import { insertEvents } from '../src/pipeline/writer.js';
+import { bootstrapRoles } from '../backend/src/db/bootstrap.js';
+import { runMigrations } from '../backend/src/db/migrate.js';
+import { closeAllPools } from '../backend/src/db/pool.js';
+import { withAdmin, withApp, withOwner, withUnscopedApp } from '../backend/src/db/tenant.js';
+import { normalize } from '../backend/src/normalize/index.js';
+import { insertEvents } from '../backend/src/pipeline/writer.js';
 
 async function databaseReachable(): Promise<boolean> {
   try {

@@ -1,8 +1,8 @@
 // เทสต์การขยับเวลาของ log ตัวอย่างที่เก่ากว่า retention ตอนรับเข้า
 
 import { describe, expect, it } from 'vitest';
-import { rebaseStaleTimestamps, SHIFTED_TAG, timeSpan } from '../src/ingest/timestamps.js';
-import { normalize } from '../src/normalize/index.js';
+import { rebaseStaleTimestamps, SHIFTED_TAG, timeSpan } from '../backend/src/ingest/timestamps.js';
+import { normalize } from '../backend/src/normalize/index.js';
 
 const now = new Date('2026-09-13T08:00:00Z');
 

@@ -18,7 +18,7 @@ Node 24 + TypeScript + Express 5 รวม API, ช่องทางรับ l
 | `src/observability/` | ค่าวัด Prometheus สำหรับ `GET /api/metrics` |
 | `src/db/` | ทางเข้าฐานข้อมูล ปักหมุด tenant, migration, partition |
 | `tools/seed.ts` | ข้อมูลเดโม |
-| `test/` | unit test และเทสต์ความปลอดภัยกับฐานข้อมูลจริง |
+| [`../tests/`](../tests/) | unit test และเทสต์ความปลอดภัยกับฐานข้อมูลจริง (รันจากโฟลเดอร์นี้ด้วย `npm test`) |
 
 ## คำสั่ง
 

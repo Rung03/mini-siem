@@ -8,10 +8,10 @@ import {
   resetRdnsCache,
   setGeoProvider,
   setResolver,
-} from '../src/enrich/index.js';
-import type { GeoProvider } from '../src/enrich/geoip.js';
-import { normalize } from '../src/normalize/index.js';
-import type { CanonicalEvent } from '../src/normalize/schema.js';
+} from '../backend/src/enrich/index.js';
+import type { GeoProvider } from '../backend/src/enrich/geoip.js';
+import { normalize } from '../backend/src/normalize/index.js';
+import type { CanonicalEvent } from '../backend/src/normalize/schema.js';
 
 function eventFor(ip: string): CanonicalEvent {
   return normalize('generic', {

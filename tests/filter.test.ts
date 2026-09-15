@@ -1,8 +1,8 @@
 // เทสต์ตัวกรองของ /events และ /stats: ค่าที่คลิกจาก dashboard ต้องกรองแบบตรงตัว
 
 import { describe, expect, it } from 'vitest';
-import { buildFilter } from '../src/api/routes/events.js';
-import type { Actor } from '../src/db/tenant.js';
+import { buildFilter } from '../backend/src/api/routes/events.js';
+import type { Actor } from '../backend/src/db/tenant.js';
 
 const viewer: Actor = {
   userId: '00000000-0000-0000-0000-000000000001',

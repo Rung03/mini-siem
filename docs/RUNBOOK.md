@@ -1,6 +1,6 @@
 # คู่มือใช้งาน — Mini SIEM
 
-คู่มือสำหรับรันและตรวจสอบระบบ ส่วนคำอธิบายว่าระบบนี้คืออะไรอยู่ใน `README.md`
+คู่มือสำหรับรันและตรวจสอบระบบ ส่วนคำอธิบายว่าระบบนี้คืออะไรอยู่ใน [`README.md`](../README.md) — ทุกคำสั่งในไฟล์นี้รันจาก root ของ repo
 
 ---
 
@@ -129,7 +129,7 @@ POSTGRES_HOST=localhost POSTGRES_PORT=5433 npm test
 
 (การข้ามเมื่อไม่มีฐานข้อมูลเป็นพฤติกรรมที่ตั้งใจ จะได้รันเทสต์ตัวแปลงตอนออฟไลน์ได้)
 
-เทสต์ที่สำคัญที่สุดอยู่ใน `backend/test/isolation.test.ts` ซึ่งจงใจเขียน query ผิด
+เทสต์ที่สำคัญที่สุดอยู่ใน `tests/isolation.test.ts` ซึ่งจงใจเขียน query ผิด
 
 - `SELECT * FROM events` แบบไม่มี `WHERE` เลย — ต้องได้ข้อมูลของ tenant เดียว
 - สั่ง `UPDATE` / `DELETE` บน `events` — ต้องโดนฐานข้อมูลปฏิเสธ (`42501`)
@@ -195,11 +195,11 @@ docker compose up -d --force-recreate backend
 db/migrations/    001 ตาราง · 002 สิทธิ์และ RLS · 003 ฟังก์ชัน/partition
                   004 schema กลางตามโจทย์ · 005 catch-all partition · 006 enrichment
 backend/src/
-  db/tenant.ts    ทางเข้าฐานข้อมูลทางเดียวของทั้งระบบ — ปักหมุด tenant ต่อ transaction
   ingest/         syslog (udp/tcp), http, upload — ทั้งสามลงท่อเดียวกัน
   normalize/      ตัวแปลงแยกตามแหล่ง เก็บ raw ไว้เสมอ
   enrich/         geoip (mmdb), reverse DNS (ไม่บล็อก), แยก IP ภายใน/ภายนอก
   pipeline/       batcher สำหรับ syslog, writer ที่เดียวที่เขียน events
+  db/tenant.ts    ทางเข้าฐานข้อมูลทางเดียวของทั้งระบบ — ปักหมุด tenant ต่อ transaction
   alerting/       ตัวตรวจกฎทุก 30 วิ และ webhook
   api/routes/     REST
 samples/          log ตัวอย่างตามข้อ 4 + สคริปต์ส่ง
