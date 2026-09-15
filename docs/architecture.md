@@ -10,10 +10,10 @@
                                           │
  App / M365 / API   ──HTTPS POST /ingest──┼──►  resolve collector
                                           │      (ใครส่ง → tenant ไหน)
- AWS / AD /         ──upload ไฟล์ batch───┘              │
- CrowdStrike                                             ▼
+ CrowdStrike / M365 ──upload ไฟล์ batch───┘              │
+                                                         ▼
                                                    parser ตามแหล่ง
-                                              (6 ตัว → schema กลางเดียว)
+                                              (4 ตัว → schema กลางเดียว)
                                                          │
                                                          ▼
                                                   batcher / writer
@@ -49,7 +49,7 @@
 
 1. **รับเข้า** — 3 ช่องทาง 2 โปรโตคอล
    - Syslog UDP **และ** TCP พอร์ต 514 (TCP รองรับทั้ง RFC6587 octet-counting และ LF framing)
-   - `POST /ingest` พร้อม `Authorization: Bearer <collector token>` รับทั้ง object เดียว, array, NDJSON และ `{"Records":[...]}`
+   - `POST /ingest` พร้อม `Authorization: Bearer <collector token>` รับทั้ง object เดียว, array และ NDJSON
    - อัปโหลดไฟล์ผ่าน `POST /api/ingest/file` (`.log/.json/.ndjson/.csv`)
 
 2. **หา tenant** — ทำจากช่องทาง **ไม่ใช่จากเนื้อ payload**
@@ -59,7 +59,7 @@
 
    ตัวอย่าง log ในโจทย์มีฟิลด์ `tenant` อยู่ในตัว payload เราเก็บไว้ที่ `attrs.claimed_tenant` แต่**ไม่ใช้ในการ route** เพราะผู้ส่งที่ระบุ tenant ตัวเองได้ ก็ระบุของคนอื่นได้ — ข้อ 2.2 ระบุให้ใช้ parameter/header/claim ซึ่งตรงกับวิธีนี้
 
-3. **แปลง** — parser 6 ตัวเลือกจาก `source_type` ของ collector ไม่ใช่จาก payload (ผู้ส่งจึงเลือกไม่ได้ว่าจะให้ตีความแบบไหน) parser ทุกตัวเป็น pure function และถูก unit test
+3. **แปลง** — parser 4 ตัวเลือกจาก `source_type` ของ collector ไม่ใช่จาก payload (ผู้ส่งจึงเลือกไม่ได้ว่าจะให้ตีความแบบไหน) parser ทุกตัวเป็น pure function และถูก unit test
 
    ตัวอย่างบางชุดในโจทย์มาในรูป "half-normalized" อยู่แล้ว (มี `@timestamp`, `source`, `event_type`) จึงมี **common envelope parser** กลางตัวหนึ่งที่ parser ทุกตัวลองก่อน แล้วค่อย fallback ไปที่ฟอร์แมตจริงของ vendor
 
@@ -122,7 +122,7 @@ reverse lookup บน appliance ให้ชี้ไป DNS ภายในท�
 | กลุ่ม | คอลัมน์ |
 |---|---|
 | เวลา | `ts` (RFC3339), `received_at` |
-| ที่มา | `source` (firewall\|network\|api\|crowdstrike\|aws\|m365\|ad), `source_type` (parser ที่อ่าน), `vendor`, `product`, `collector_id` |
+| ที่มา | `source` (firewall\|network\|api\|crowdstrike\|m365), `source_type` (parser ที่อ่าน), `vendor`, `product`, `collector_id` |
 | เหตุการณ์ | `event_type`, `event_subtype`, `event_category`, `action`, `event_outcome`, `severity` (0–10) |
 | ตัวตน | `user_name`, `host`, `process` |
 | เครือข่าย | `src_ip`, `src_port`, `dst_ip`, `dst_port`, `protocol` |

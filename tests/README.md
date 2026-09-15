@@ -4,7 +4,7 @@
 
 | ไฟล์ | ทดสอบอะไร | ต้องมีฐานข้อมูล |
 |---|---|---|
-| `parsers.test.ts` | parser ทุกแหล่ง รวม sample ข้อ 4.1–4.7 ของโจทย์ | ไม่ |
+| `parsers.test.ts` | parser ทุกแหล่ง รวม sample ข้อ 4.1–4.4 และ 4.6 ของโจทย์ | ไม่ |
 | `enrich.test.ts` | GeoIP / reverse DNS พังแล้ว event ต้องไม่หาย | ไม่ |
 | `login-event.test.ts` | event การล็อกอินหน้าเว็บ และไม่มีรหัสผ่านใน event | ไม่ |
 | `migrate.test.ts` | checksum ของ migration | ไม่ |
@@ -22,6 +22,6 @@ cd backend && npm install
 POSTGRES_HOST=localhost POSTGRES_PORT=5433 npm test
 ```
 
-ต้องได้ `105 passed` ถ้าขึ้น `93 passed | 12 skipped` แปลว่าต่อฐานข้อมูลไม่ได้ และเทสต์ความปลอดภัยไม่ได้รัน
+ต้องได้ `93 passed` ถ้าขึ้น `81 passed | 12 skipped` แปลว่าต่อฐานข้อมูลไม่ได้ และเทสต์ความปลอดภัยไม่ได้รัน
 
 หรือ `make test` จาก root

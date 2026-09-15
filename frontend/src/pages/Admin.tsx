@@ -1,4 +1,4 @@
-// หน้าผู้ดูแล: collector, กฎแจ้งเตือน, ผู้ใช้, tenant, audit trail และ partition
+// หน้าผู้ดูแล: collector, ตั้งค่าการแจ้งเตือน (ระดับ / เปิดปิด ต่อ tenant), ผู้ใช้, tenant, audit trail และ partition
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,11 +18,11 @@ import {
   useTenants,
 } from '../components/common.js';
 
-type Tab = 'collectors' | 'rules' | 'users' | 'tenants' | 'audit' | 'storage';
+type Tab = 'collectors' | 'alerts' | 'users' | 'tenants' | 'audit' | 'storage';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'collectors', label: 'Collectors' },
-  { key: 'rules', label: 'Alert rules' },
+  { key: 'alerts', label: 'Alert settings' },
   { key: 'users', label: 'Users' },
   { key: 'tenants', label: 'Tenants' },
   { key: 'audit', label: 'Audit trail' },
@@ -51,7 +51,7 @@ export function Admin({ user }: { user: ApiUser }) {
       </div>
 
       {tab === 'collectors' && <Collectors />}
-      {tab === 'rules' && <Rules />}
+      {tab === 'alerts' && <AlertSettings />}
       {tab === 'users' && <Users currentUserId={user.id} />}
       {tab === 'tenants' && <Tenants />}
       {tab === 'audit' && <Audit />}
@@ -174,7 +174,7 @@ function Collectors() {
               value={form.source_type}
               onChange={(e) => setForm({ ...form, source_type: e.target.value })}
             >
-              {['fortigate', 'windows_ad', 'm365', 'aws_cloudtrail', 'crowdstrike', 'generic'].map(
+              {['fortigate', 'm365', 'crowdstrike', 'generic'].map(
                 (s) => <option key={s} value={s}>{s}</option>,
               )}
             </select>
@@ -329,62 +329,91 @@ function FileUpload({ collectors }: { collectors: Collector[] }) {
   );
 }
 
-function Rules() {
+const SEVERITIES = [
+  { value: 1, label: 'Critical' },
+  { value: 2, label: 'High' },
+  { value: 3, label: 'Medium' },
+  { value: 4, label: 'Low' },
+  { value: 5, label: 'Info' },
+];
+
+function AlertSettings() {
   const queryClient = useQueryClient();
+  const tenants = useTenants(true);
   const tenantNames = useTenantNames();
+  const [tenant, setTenant] = useState('');
+
   const list = useQuery({
     queryKey: ['rules'],
     queryFn: () => api.get<{ rules: Rule[] }>('/rules'),
   });
 
-  const toggle = useMutation({
-    mutationFn: (r: Rule) => api.patch(`/rules/${r.id}`, { enabled: !r.enabled }),
+  const update = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: Partial<Pick<Rule, 'severity' | 'enabled'>> }) =>
+      api.patch(`/rules/${id}`, body),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rules'] }),
   });
 
+  const rules = (list.data?.rules ?? []).filter((r) => !tenant || r.tenant_id === tenant);
+
   return (
     <div className="card">
-      <h2>Alert rules</h2>
-      <ErrorNote error={toggle.error} />
+      <h2>Alert settings</h2>
+      <ErrorNote error={update.error} />
+
+      <div className="filters">
+        <div className="field">
+          <label htmlFor="alert-tenant">Tenant</label>
+          <select id="alert-tenant" value={tenant} onChange={(e) => setTenant(e.target.value)}>
+            <option value="">All tenants</option>
+            {tenants.data?.tenants.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Name</th>
               <th>Tenant</th>
-              <th>Condition</th>
-              <th>Grouped by</th>
-              <th>Webhook</th>
-              <th>Enabled</th>
-              <th />
+              <th>Alert</th>
+              <th>Severity</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {(list.data?.rules ?? []).map((r) => (
+            {rules.map((r) => (
               <tr key={r.id}>
-                <td>{r.name}</td>
                 <td>{tenantNames.get(r.tenant_id) ?? <span className="faint">-</span>}</td>
-                <td className="muted">
-                  {r.threshold}+ {r.match_outcome ?? 'any'} {r.match_category ?? 'event'}
-                  {' in '}
-                  {Math.round(r.window_seconds / 60)} min
-                </td>
-                <td className="mono">{r.group_by}</td>
-                <td className="mono">{r.webhook_url ?? <span className="muted">—</span>}</td>
+                <td>{r.name}</td>
                 <td>
-                  <span className={`pill ${r.enabled ? 'success' : 'unknown'}`}>
-                    {r.enabled ? 'yes' : 'no'}
-                  </span>
+                  <select
+                    aria-label={`Severity for ${r.name}`}
+                    value={r.severity}
+                    disabled={update.isPending}
+                    onChange={(e) => update.mutate({ id: r.id, body: { severity: Number(e.target.value) } })}
+                  >
+                    {SEVERITIES.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
                 </td>
                 <td>
-                  <button onClick={() => toggle.mutate(r)}>
-                    {r.enabled ? 'Disable' : 'Enable'}
+                  <button
+                    className={r.enabled ? 'primary' : undefined}
+                    disabled={update.isPending}
+                    onClick={() => update.mutate({ id: r.id, body: { enabled: !r.enabled } })}
+                  >
+                    {r.enabled ? 'On' : 'Off'}
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {rules.length === 0 && <div className="empty">No alerts for this tenant.</div>}
       </div>
     </div>
   );

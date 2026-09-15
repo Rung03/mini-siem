@@ -14,9 +14,7 @@ import {
 
 const SOURCE_TYPES = [
   'fortigate',
-  'windows_ad',
   'm365',
-  'aws_cloudtrail',
   'crowdstrike',
   'generic',
 ];
@@ -120,7 +118,7 @@ export function Search({ user }: { user: ApiUser }) {
             id="event_type"
             value={eventType}
             onChange={(e) => setEventType(e.target.value)}
-            placeholder="LogonFailed"
+            placeholder="login_failed"
           />
         </div>
 

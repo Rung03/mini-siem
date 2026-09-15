@@ -43,62 +43,6 @@ describe('fortigate', () => {
   });
 });
 
-describe('windows_ad', () => {
-  it('maps 4625 to a failed login with a readable reason', () => {
-    const e = run(
-      'windows_ad',
-      JSON.stringify({
-        EventID: 4625,
-        TimeCreated: '2026-09-12T09:15:00Z',
-        Computer: 'DC-01.corp.local',
-        TargetUserName: 'CORP\\jsmith',
-        IpAddress: '203.0.113.44',
-        LogonType: 3,
-        SubStatus: '0xc000006a',
-      }),
-    );
-    expect(e.eventOutcome).toBe('failure');
-    expect(e.eventAction).toBe('login');
-    expect(e.userName).toBe('jsmith');
-    expect(e.attrs.domain).toBe('CORP');
-    expect(e.attrs.reason).toBe('wrong password');
-    expect(e.attrs.logon_type_name).toBe('network');
-  });
-
-  it('maps 4624 to a successful login', () => {
-    const e = run(
-      'windows_ad',
-      JSON.stringify({ EventID: 4624, TargetUserName: 'apatel', IpAddress: '10.10.0.5' }),
-    );
-    expect(e.eventOutcome).toBe('success');
-    expect(e.userName).toBe('apatel');
-  });
-
-  it('falls back to the rendered text form', () => {
-    const text = [
-      'An account failed to log on.',
-      '',
-      'Subject:',
-      '\tAccount Name:\t\tDC-01$',
-      'Account For Which Logon Failed:',
-      '\tAccount Name:\t\tadministrator',
-      'Network Information:',
-      '\tSource Network Address:\t203.0.113.66',
-      '\tLogon Type:\t3',
-    ].join('\n');
-
-    const e = run('windows_ad', text);
-    expect(e.eventOutcome).toBe('failure');
-    expect(e.srcIp).toBe('203.0.113.66');
-  });
-
-  it('flags a payload with no event id rather than dropping it', () => {
-    const e = run('windows_ad', 'something else entirely');
-    expect(e.parseOk).toBe(false);
-    expect(e.raw).toBe('something else entirely');
-  });
-});
-
 describe('m365', () => {
   it('reads a failed sign-in', () => {
     const e = run(
@@ -125,40 +69,6 @@ describe('m365', () => {
       JSON.stringify({ Operation: 'UserLoggedIn', ResultStatus: 'Success', UserId: 'a@b.com' }),
     );
     expect(e.eventOutcome).toBe('success');
-  });
-});
-
-describe('aws_cloudtrail', () => {
-  it('reads a failed console login', () => {
-    const e = run(
-      'aws_cloudtrail',
-      JSON.stringify({
-        eventTime: '2026-09-12T09:17:00Z',
-        eventSource: 'signin.amazonaws.com',
-        eventName: 'ConsoleLogin',
-        sourceIPAddress: '198.51.100.23',
-        userIdentity: { type: 'IAMUser', userName: 'deploy-bot', accountId: '123456789012' },
-        responseElements: { ConsoleLogin: 'Failure' },
-        errorMessage: 'Failed authentication',
-      }),
-    );
-    expect(e.eventOutcome).toBe('failure');
-    expect(e.userName).toBe('deploy-bot');
-    expect(e.srcIp).toBe('198.51.100.23');
-    expect(e.eventCategory).toBe('authentication');
-  });
-
-  it('keeps an AWS service principal out of the ip column', () => {
-    const e = run(
-      'aws_cloudtrail',
-      JSON.stringify({
-        eventName: 'ConsoleLogin',
-        sourceIPAddress: 'cloudformation.amazonaws.com',
-        responseElements: { ConsoleLogin: 'Success' },
-      }),
-    );
-    expect(e.srcIp).toBeNull();
-    expect(e.attrs.source).toBe('cloudformation.amazonaws.com');
   });
 });
 
@@ -291,7 +201,7 @@ describe('generic', () => {
 
 describe('every parser', () => {
   const sources: SourceType[] = [
-    'fortigate', 'windows_ad', 'm365', 'aws_cloudtrail', 'crowdstrike', 'generic',
+    'fortigate', 'm365', 'crowdstrike', 'generic',
   ];
 
   it.each(sources)('%s keeps the raw payload intact', (source) => {
@@ -391,29 +301,6 @@ describe('assignment sample payloads', () => {
     expect(e.attrs.sha256).toBe('abc...');
   });
 
-  it('4.5 AWS CloudTrail sample', () => {
-    const e = run(
-      'aws_cloudtrail',
-      JSON.stringify({
-        tenant: 'demoB',
-        source: 'aws',
-        cloud: { service: 'iam', account_id: '123456789012', region: 'ap-southeast-1' },
-        event_type: 'CreateUser',
-        user: 'admin',
-        '@timestamp': '2025-08-20T09:10:00Z',
-        raw: { eventName: 'CreateUser', requestParameters: { userName: 'temp-user' } },
-      }),
-    );
-    expect(e.parseOk).toBe(true);
-    expect(e.source).toBe('aws');
-    expect(e.eventType).toBe('CreateUser');
-    expect(e.action).toBe('create');
-    expect(e.userName).toBe('admin');
-    expect(e.cloudService).toBe('iam');
-    expect(e.cloudAccountId).toBe('123456789012');
-    expect(e.cloudRegion).toBe('ap-southeast-1');
-  });
-
   it('4.6 Microsoft 365 sample', () => {
     const e = run(
       'm365',
@@ -438,33 +325,6 @@ describe('assignment sample payloads', () => {
     expect(e.attrs.workload).toBe('Exchange');
   });
 
-  it('4.7 Windows AD sample', () => {
-    const e = run(
-      'windows_ad',
-      JSON.stringify({
-        tenant: 'demoA',
-        source: 'ad',
-        event_id: 4625,
-        event_type: 'LogonFailed',
-        user: 'demo\\eve',
-        host: 'DC01',
-        ip: '203.0.113.77',
-        logon_type: 3,
-        '@timestamp': '2025-08-20T11:11:11Z',
-      }),
-    );
-    expect(e.parseOk).toBe(true);
-    expect(e.source).toBe('ad');
-    expect(e.eventType).toBe('LogonFailed');
-    expect(e.action).toBe('login');
-    expect(e.eventOutcome).toBe('failure');
-    expect(e.userName).toBe('eve');
-    expect(e.attrs.domain).toBe('demo');
-    expect(e.host).toBe('DC01');
-    expect(e.srcIp).toBe('203.0.113.77');
-    expect(e.attrs.logon_type_name).toBe('network');
-  });
-
   it('keeps severity inside the 0-10 range section 3 specifies', () => {
     for (const source of SOURCES_UNDER_TEST) {
       const e = run(source, 'nonsense that no parser understands');
@@ -474,5 +334,5 @@ describe('assignment sample payloads', () => {
 });
 
 const SOURCES_UNDER_TEST: SourceType[] = [
-  'fortigate', 'windows_ad', 'm365', 'aws_cloudtrail', 'crowdstrike', 'generic',
+  'fortigate', 'm365', 'crowdstrike', 'generic',
 ];

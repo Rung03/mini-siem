@@ -1,4 +1,4 @@
-// หน้าสรุป: คลิกการ์ด คอลัมน์ หรือแถวเพื่อกรองทั้งหน้า, การ์ดตัวเลขเอียง 3D, กราฟพื้นที่ตามเวลา, คอลัมน์ 3D และอันดับต่าง ๆ
+// หน้าสรุป: คลิกการ์ด ชิ้นโดนัท หรือแถวเพื่อกรองทั้งหน้า, การ์ดตัวเลขเอียง 3D, กราฟพื้นที่ตามเวลา, โดนัทต่อแหล่ง และอันดับต่าง ๆ
 
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -37,7 +37,7 @@ import {
   IconShieldCheck,
   IconUsers,
 } from '../components/icons.js';
-import { SourceBars3D } from '../components/SourceBars3D.js';
+import { SourceDonut } from '../components/SourceDonut.js';
 import { COLORS } from '../theme.js';
 
 const SERIES = [
@@ -45,7 +45,7 @@ const SERIES = [
   { key: 'failure', name: 'Failed', color: COLORS.failure },
 ] as const;
 
-type FilterKey = 'outcome' | 'source' | 'user' | 'ip' | 'event_type' | 'country';
+type FilterKey = 'outcome' | 'source' | 'user' | 'ip' | 'event_type';
 type Filters = Partial<Record<FilterKey, string>>;
 
 const FILTER_LABELS: Record<FilterKey, string> = {
@@ -54,7 +54,6 @@ const FILTER_LABELS: Record<FilterKey, string> = {
   user: 'User',
   ip: 'Address',
   event_type: 'Event type',
-  country: 'Country',
 };
 
 function filterParams(filters: Filters, omit?: FilterKey) {
@@ -65,7 +64,6 @@ function filterParams(filters: Filters, omit?: FilterKey) {
     user_exact: pick('user'),
     ip: pick('ip'),
     event_type: pick('event_type'),
-    country: pick('country'),
   };
 }
 
@@ -166,15 +164,6 @@ export function Dashboard({ user }: { user: ApiUser }) {
       api.get<{ rows: TopRow[] }>(`/stats/top${qs({ ...typeParams, field: 'event_type', top: 8 })}`),
   });
 
-  const countryParams = except('country');
-  const topCountries = useQuery({
-    queryKey: ['top', 'geo_country_iso', countryParams],
-    queryFn: () =>
-      api.get<{ rows: TopRow[] }>(
-        `/stats/top${qs({ ...countryParams, field: 'geo_country_iso', top: 8 })}`,
-      ),
-  });
-
   const recent = useQuery({
     queryKey: ['recent', params],
     queryFn: () => api.get<{ events: SiemEvent[] }>(`/events${qs({ ...params, limit: 15 })}`),
@@ -193,10 +182,7 @@ export function Dashboard({ user }: { user: ApiUser }) {
   return (
     <>
       <div className="page-head enter" style={{ '--i': 0 } as CSSProperties}>
-        <div>
-          <h1>Security overview</h1>
-          <p className="page-sub">Click any card, column or row to filter the whole dashboard</p>
-        </div>
+        <h1>Security overview</h1>
         <div className="filters" style={{ marginBottom: 0 }}>
           <RangePicker value={key} onChange={setKey} />
           <TenantSelect user={user} value={tenant} onChange={setTenant} />
@@ -218,31 +204,24 @@ export function Dashboard({ user }: { user: ApiUser }) {
         </div>
       </div>
 
-      <div className={`filter-bar${activeFilters.length ? ' has-filters' : ''}`} aria-live="polite">
-        {activeFilters.length === 0 ? (
-          <span className="filter-empty">
-            <span className="pulse-dot" aria-hidden="true" />
-            Showing everything in this time range
-          </span>
-        ) : (
-          <>
-            <span className="filter-bar-label">Showing only</span>
-            {activeFilters.map(([k, v]) => (
-              <button
-                key={k}
-                className="chip"
-                onClick={() => remove(k)}
-                aria-label={`Remove filter ${FILTER_LABELS[k]} ${v}`}
-              >
-                <span className="chip-key">{FILTER_LABELS[k]}</span>
-                <span className="chip-val">{v}</span>
-                <span className="chip-x" aria-hidden="true">×</span>
-              </button>
-            ))}
-            <button className="chip-clear" onClick={() => setFilters({})}>Clear all</button>
-          </>
-        )}
-      </div>
+      {activeFilters.length > 0 && (
+        <div className="filter-bar has-filters" aria-live="polite">
+          <span className="filter-bar-label">Showing only</span>
+          {activeFilters.map(([k, v]) => (
+            <button
+              key={k}
+              className="chip"
+              onClick={() => remove(k)}
+              aria-label={`Remove filter ${FILTER_LABELS[k]} ${v}`}
+            >
+              <span className="chip-key">{FILTER_LABELS[k]}</span>
+              <span className="chip-val">{v}</span>
+              <span className="chip-x" aria-hidden="true">×</span>
+            </button>
+          ))}
+          <button className="chip-clear" onClick={() => setFilters({})}>Clear all</button>
+        </div>
+      )}
 
       <ErrorNote error={summary.error ?? series.error} />
 
@@ -345,8 +324,7 @@ export function Dashboard({ user }: { user: ApiUser }) {
               <button className="chip-clear small" onClick={() => remove('source')}>Clear</button>
             )}
           </div>
-          <SourceBars3D
-            key={filterKey}
+          <SourceDonut
             rows={bySource.data?.rows ?? []}
             selected={filters.source ?? null}
             onSelect={(v) => toggle('source', v)}
@@ -379,17 +357,6 @@ export function Dashboard({ user }: { user: ApiUser }) {
           rows={topEventTypes.data?.rows ?? []}
           selected={filters.event_type}
           onSelect={(v) => toggle('event_type', v)}
-        />
-        <TopCard
-          index={10}
-          title="Top countries"
-          header="Country"
-          rows={topCountries.data?.rows ?? []}
-          selected={filters.country}
-          onSelect={(v) => toggle('country', v)}
-          empty={
-            <>No location data. Run <span className="mono">make geoip</span> to enable it.</>
-          }
         />
       </div>
 
@@ -475,7 +442,6 @@ function TopCard({
   mono,
   selected,
   onSelect,
-  empty,
 }: {
   index: number;
   title: string;
@@ -484,7 +450,6 @@ function TopCard({
   mono?: boolean;
   selected?: string;
   onSelect: (value: string) => void;
-  empty?: React.ReactNode;
 }) {
   const max = Math.max(...rows.map((r) => r.total), 1);
 
@@ -498,7 +463,7 @@ function TopCard({
       </div>
 
       {rows.length === 0 ? (
-        <div className="empty">{empty ?? 'No data.'}</div>
+        <div className="empty">No data.</div>
       ) : (
         <div className="table-wrap">
           <table>

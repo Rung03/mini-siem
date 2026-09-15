@@ -53,10 +53,7 @@ function Shell({ user }: { user: ApiUser }) {
       <nav className="sidebar">
         <div className="brand">
           <LogoCube />
-          <div>
-            <strong>Mini SIEM</strong>
-            <span>Security analytics</span>
-          </div>
+          <strong>Mini SIEM</strong>
         </div>
 
         <NavLink to="/" end className="nav-link"><IconDashboard /><span>Dashboard</span></NavLink>
@@ -69,10 +66,7 @@ function Shell({ user }: { user: ApiUser }) {
         <div className="sidebar-footer">
           <div className="who">
             <span className="avatar" aria-hidden="true">{user.email.slice(0, 1).toUpperCase()}</span>
-            <div>
-              <strong>{user.email}</strong>
-              {user.role === 'admin' ? 'Admin — all tenants' : 'Viewer — own tenant'}
-            </div>
+            <strong>{user.email}</strong>
           </div>
           <button onClick={() => void signOut()}>
             <IconLogout />

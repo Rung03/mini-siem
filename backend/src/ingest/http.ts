@@ -28,10 +28,6 @@ export function extractPayloads(body: string): ExtractedPayload[] {
       }
 
       if (parsed && typeof parsed === 'object') {
-        const records = (parsed as Record<string, unknown>).Records;
-        if (Array.isArray(records)) {
-          return records.map((item) => ({ raw: JSON.stringify(item), json: item }));
-        }
         return [{ raw: text, json: parsed }];
       }
     } catch {

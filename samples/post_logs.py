@@ -40,16 +40,14 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_FILES = [
     "api_login.json",
     "crowdstrike.json",
-    "aws_cloudtrail.json",
     "m365_audit.json",
-    "windows_ad.json",
 ]
 
 USERS = ["alice", "bob", "carol", "dave", "eve", "admin", "svc_backup"]
 IPS = ["203.0.113.7", "203.0.113.44", "198.51.100.23", "10.0.1.10", "192.0.2.31"]
 
 
-TIME_FIELDS = ("@timestamp", "eventTime", "CreationTime", "TimeCreated", "timestamp")
+TIME_FIELDS = ("@timestamp", "CreationTime", "timestamp")
 
 
 def retime(value, base: datetime, counter: list[int]):

@@ -33,7 +33,7 @@ describe('event filters', () => {
         limit: 100,
         outcome: 'failure',
         source: 'firewall',
-        event_type: 'LogonFailed',
+        event_type: 'login_failed',
         country: 'th',
         ip: '203.0.113.66',
         user_exact: 'jsmith',

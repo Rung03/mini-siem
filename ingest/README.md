@@ -5,7 +5,7 @@
 | ช่องทาง | โปรโตคอล | ยืนยันผู้ส่งด้วย | ไฟล์ |
 |---|---|---|---|
 | Syslog | UDP / TCP 514 | IP ต้นทางอยู่ใน CIDR ของ collector | `syslog.ts` |
-| HTTP | `POST /ingest` (JSON, array, NDJSON, `{"Records":[]}`) | `Authorization: Bearer <collector token>` | `http.ts` |
+| HTTP | `POST /ingest` (JSON, array, NDJSON) | `Authorization: Bearer <collector token>` | `http.ts` |
 | อัปโหลดไฟล์ | `POST /api/ingest/file` (`.log .json .ndjson .csv`) | session ของผู้ใช้ | `upload.ts` |
 
 - tenant มาจาก collector เสมอ ไม่ใช่จากฟิลด์ `tenant` ใน payload

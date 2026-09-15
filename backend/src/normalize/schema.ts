@@ -2,9 +2,7 @@
 
 export const SOURCE_TYPES = [
   'fortigate',
-  'windows_ad',
   'm365',
-  'aws_cloudtrail',
   'crowdstrike',
   'generic',
 ] as const;
@@ -16,9 +14,7 @@ export const SOURCES = [
   'network',
   'api',
   'crowdstrike',
-  'aws',
   'm365',
-  'ad',
 ] as const;
 
 export type Source = (typeof SOURCES)[number];

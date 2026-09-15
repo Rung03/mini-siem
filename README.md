@@ -157,9 +157,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | ไฟล์ | อ่านอะไร |
 |---|---|
 | `fortigate.ts` | Firewall แบบ key=value ทั้งรูปแบบ FortiGate (`srcip=`) และแบบทั่วไป (`src=` `dst=` `spt=` `dpt=` `proto=`) |
-| `windows-ad.ts` | Windows Security Event 4624 / 4625 / 4634 ทั้ง JSON และข้อความแบบ rendered แปลรหัส sub-status เป็นเหตุผลที่อ่านได้ |
 | `m365.ts` | Microsoft 365 Unified Audit Log (`UserLoggedIn` / `UserLoginFailed`) |
-| `aws-cloudtrail.ts` | AWS CloudTrail (`ConsoleLogin`, `AssumeRole` ฯลฯ) |
 | `crowdstrike.ts` | CrowdStrike Falcon ทั้ง `UserActivityAuditEvent` และ `DetectionSummaryEvent` |
 | `generic.ts` | syslog ทั่วไปและ JSON จากแอปภายใน จับรูปแบบ sshd (`Failed password for …`) ได้ — บรรทัด key=value ที่เป็น firewall (`action` + `src` + `dst` หรือ `devname` + `logid`) ส่งต่อให้ `fortigate.ts` |
 
@@ -170,7 +168,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | ไฟล์ | หน้าที่ | ฟังก์ชันหลัก |
 |---|---|---|
 | `syslog.ts` | ฟัง UDP และ TCP พอร์ต 514 รองรับทั้ง octet-counting และแบ่งบรรทัด ผู้ส่งที่ไม่ตรงกับ collector ไหนถูกทิ้ง | `startSyslogUdp` `startSyslogTcp` |
-| `http.ts` | `POST /ingest` ด้วย bearer token รับได้ทั้ง object, array, `{"Records":[…]}` และ NDJSON เขียนแบบรอผลก่อนตอบ | `ingestRouter` `extractPayloads` |
+| `http.ts` | `POST /ingest` ด้วย bearer token รับได้ทั้ง object, array และ NDJSON เขียนแบบรอผลก่อนตอบ | `ingestRouter` `extractPayloads` |
 | `upload.ts` | `POST /api/ingest/file` อัปโหลด `.log` `.json` `.ndjson` `.csv` ผ่านหน้าเว็บ ตอบช่วงเวลาที่เก็บจริงกลับมา | `handleUpload` |
 | `timestamps.ts` | ชุด event ที่ event ใหม่สุดยังเก่ากว่า `RETENTION_DAYS` (เช่น sample ปี 2025) ถูกขยับเวลามาที่ปัจจุบัน เก็บเวลาเดิมใน `attrs.original_ts` และติด tag `timestamp-shifted` — ปิดด้วย `keep_timestamps=true` (อัปโหลด) หรือ header `X-Keep-Timestamps: true` (HTTP) | `rebaseStaleTimestamps` `timeSpan` |
 | `collectors.ts` | จับคู่ข้อมูลเข้ากับ collector (จาก token หรือ IP) มี cache ทั้งเจอและไม่เจอ สร้างและ hash token | `resolveByToken` `resolveByIp` `resolveById` `generateToken` |
@@ -220,7 +218,7 @@ migration รันครั้งเดียวตามลำดับเล�
 | `src/config.ts` | อ่านและตรวจค่า environment ทั้งหมดด้วย zod รวมเป็น object `config` ที่เดียว |
 | `src/observability/metrics.ts` | ตัวนับ Prometheus: event ที่เขียน, ที่แปลงไม่ได้, ที่ถูกทิ้ง, alert, คำขอที่โดน rate limit, ผลการล็อกอิน, คิว batcher — อ่านที่ `GET /api/metrics` (Admin หรือ `METRICS_TOKEN`) |
 | `tools/seed.ts` | สร้างข้อมูลเดโม: 2 tenant, ผู้ใช้, collector, กฎแจ้งเตือน, traffic 24 ชม. และชุดเดารหัสผ่านที่ทำให้เกิด alert — สร้าง payload ดิบของแต่ละแหล่งแล้วส่งผ่าน parser จริง |
-| `../tests/parsers.test.ts` | เทสต์ parser ทุกแหล่ง รวม sample ข้อ 4.1–4.7 ของโจทย์ |
+| `../tests/parsers.test.ts` | เทสต์ parser ทุกแหล่ง รวม sample ข้อ 4.1–4.4 และ 4.6 ของโจทย์ |
 | `../tests/migrate.test.ts` | เทสต์ว่า checksum เดิมก่อนลบ comment ยังถูกยอมรับ และ migration ที่ถูกแก้จริงยังถูกปฏิเสธ |
 | `../tests/login-event.test.ts` | เทสต์ event ของการล็อกอินหน้าเว็บ และยืนยันว่าไม่มีรหัสผ่านใน event |
 | `../tests/enrich.test.ts` | เทสต์ enrichment: ไฟล์ GeoIP หาย, provider พัง, DNS ค้าง — event ต้องรอดทุกกรณี |
@@ -244,15 +242,15 @@ migration รันครั้งเดียวตามลำดับเล�
 | `App.tsx` | ตรวจว่าล็อกอินหรือยัง, แถบข้างแบบติดหน้าจอ, ปุ่ม Sign out, กำหนด route |
 | `api/client.ts` | ตัวเรียก API: ส่ง cookie ทุกครั้ง, ใส่ `content-type: application/json` ทุก mutation, อัปโหลดไฟล์, type ของข้อมูลทุกชนิด |
 | `components/common.tsx` | ส่วนประกอบใช้ซ้ำ: เลือกช่วงเวลา, เลือก tenant (Admin เท่านั้น), การ์ดตัวเลขเอียง 3D ที่คลิกได้และนับเลขขึ้น (`Tilt` `useCountUp`), ป้ายผลลัพธ์, จัดรูปแบบเวลา |
-| `components/SourceBars3D.tsx` | คอลัมน์ 3D จำนวน event ต่อแหล่ง คลิกหรือกด Enter เพื่อกรอง |
+| `components/SourceDonut.tsx` | กราฟโดนัทสัดส่วน event ต่อแหล่ง คลิกชิ้นหรือแถวคำอธิบายเพื่อกรอง แหล่งที่เลิกรองรับรวมเป็น other และกรองไม่ได้ |
 | `components/icons.tsx` | ไอคอน SVG ของเมนู/การ์ด และโลโก้ลูกบาศก์ |
-| `theme.ts` | สีกราฟ (hex) ที่ผ่านตัวตรวจสีบนพื้นขาว: ฟ้า = สำเร็จ, แดง = ล้มเหลว, ม่วง = คอลัมน์ — คู่ฟ้า/แดงแยกได้แม้ตาบอดสี |
+| `theme.ts` | สีกราฟ (hex) ที่ผ่านตัวตรวจสีบนพื้นขาว: ฟ้า = สำเร็จ, แดง = ล้มเหลว, สีแหล่งในโดนัทจัดลำดับให้ชิ้นที่ติดกันแยกสีได้ — คู่ฟ้า/แดงแยกได้แม้ตาบอดสี |
 | `pages/Login.tsx` | หน้าเข้าสู่ระบบ |
-| `pages/Dashboard.tsx` | **คลิกกรองทั้งหน้า**: การ์ด Successful/Failed กรองผลลัพธ์, คอลัมน์กรองแหล่ง, แถว Top N กรองผู้ใช้ / IP / ประเภท / ประเทศ, เซลล์ใน Recent events — ตัวกรองแสดงเป็น chip ลบทีละตัวหรือ Clear all ได้ แต่ละตาราง Top N ไม่กรองด้วยมิติของตัวเองจึงสลับค่าได้ในคลิกเดียว |
+| `pages/Dashboard.tsx` | **คลิกกรองทั้งหน้า**: การ์ด Successful/Failed กรองผลลัพธ์, ชิ้นโดนัทกรองแหล่ง, แถว Top N กรองผู้ใช้ / IP / ประเภท, เซลล์ใน Recent events — ตัวกรองแสดงเป็น chip ลบทีละตัวหรือ Clear all ได้ แต่ละตาราง Top N ไม่กรองด้วยมิติของตัวเองจึงสลับค่าได้ในคลิกเดียว |
 | `pages/Search.tsx` | ค้นหาข้ามทุกแหล่ง กรองตามเวลา ผลลัพธ์ แหล่ง ผู้ใช้ IP/CIDR ประเทศ และเปิดดู payload ดิบได้ |
 | `pages/Alerts.tsx` | รายการ alert และปุ่ม Acknowledge |
-| `pages/Admin.tsx` | จัดการ collector (สร้าง, ปิด, หมุน token, อัปโหลดไฟล์), กฎ, ผู้ใช้, tenant, audit trail, partition |
-| `styles.css` | ธีมสว่างแบบมีมิติ: การ์ดลอยเงาซ้อน, แสงพื้นหลังเคลื่อนไหว, แอนิเมชันเข้าหน้า/คอลัมน์โต/แถบวัด, chip ตัวกรองติดขอบบน — ปิดการเคลื่อนไหวทั้งหมดเมื่อระบบตั้ง `prefers-reduced-motion` |
+| `pages/Admin.tsx` | จัดการ collector (สร้าง, ปิด, หมุน token, อัปโหลดไฟล์), ตั้งค่าการแจ้งเตือน (เลือกระดับและเปิด/ปิดต่อ tenant), ผู้ใช้, tenant, audit trail, partition |
+| `styles.css` | ธีมสว่างแบบมีมิติ: การ์ดลอยเงาซ้อน, แสงพื้นหลังเคลื่อนไหว, แอนิเมชันเข้าหน้า/แถบวัด, chip ตัวกรองติดขอบบน — ปิดการเคลื่อนไหวทั้งหมดเมื่อระบบตั้ง `prefers-reduced-motion` |
 
 **ไฟล์ตั้งค่า frontend**
 

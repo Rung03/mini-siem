@@ -157,7 +157,7 @@ export interface SiemEvent {
 }
 
 export const SOURCES = [
-  'firewall', 'network', 'api', 'crowdstrike', 'aws', 'm365', 'ad',
+  'firewall', 'network', 'api', 'crowdstrike', 'm365',
 ] as const;
 
 export interface Summary {
@@ -230,13 +230,7 @@ export interface Rule {
   tenant_id: string;
   name: string;
   enabled: boolean;
-  match_category: string | null;
-  match_outcome: string | null;
-  group_by: string;
-  window_seconds: number;
-  threshold: number;
   severity: number;
-  webhook_url: string | null;
 }
 
 export interface AuditEntry {

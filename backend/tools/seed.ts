@@ -33,7 +33,7 @@ const TENANTS: TenantSpec[] = [
       'jsmith', 'apatel', 'mchen', 'lgarcia', 'twilliams',
       'nsuzuki', 'rkumar', 'svance', 'administrator',
     ],
-    hosts: ['DC-01', 'DC-02', 'FILE-01', 'VPN-01', 'WEB-01'],
+    hosts: ['APP-01', 'APP-02', 'FILE-01', 'VPN-01', 'WEB-01'],
     volume: 3200,
   },
   {
@@ -43,7 +43,7 @@ const TENANTS: TenantSpec[] = [
     subnet: '10.20.0',
     domain: 'contoso.com',
     users: ['bmiller', 'kdavis', 'ythompson', 'deploy-bot', 'svc_backup'],
-    hosts: ['CON-DC-01', 'CON-APP-01'],
+    hosts: ['CON-WEB-01', 'CON-APP-01'],
     volume: 1400,
   },
 ];
@@ -77,31 +77,6 @@ function fortigateLine(ts: Date, user: string, ip: string, ok: boolean, device: 
   );
 }
 
-function windowsAdJson(
-  ts: Date,
-  user: string,
-  ip: string,
-  ok: boolean,
-  host: string,
-  domain: string,
-): string {
-  return JSON.stringify({
-    EventID: ok ? 4624 : 4625,
-    TimeCreated: iso(ts),
-    Computer: `${host}.${domain}`,
-    Channel: 'Security',
-    TargetUserName: user,
-    TargetDomainName: domain.split('.')[0]!.toUpperCase(),
-    SubjectUserName: '-',
-    IpAddress: ip,
-    IpPort: String(40000 + Math.floor(Math.random() * 20000)),
-    LogonType: Math.random() < 0.6 ? 3 : 10,
-    LogonProcessName: 'NtLmSsp',
-    WorkstationName: host,
-    ...(ok ? {} : { Status: '0xc000006d', SubStatus: '0xc000006a' }),
-  });
-}
-
 function m365Json(ts: Date, user: string, ip: string, ok: boolean, domain: string): string {
   return JSON.stringify({
     CreationTime: iso(ts).slice(0, 19),
@@ -117,28 +92,6 @@ function m365Json(ts: Date, user: string, ip: string, ok: boolean, domain: strin
     UserId: `${user}@${domain}`,
     UserAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
     ...(ok ? {} : { LogonError: 'InvalidUserNameOrPassword' }),
-  });
-}
-
-function cloudtrailJson(ts: Date, user: string, ip: string, ok: boolean): string {
-  return JSON.stringify({
-    eventVersion: '1.08',
-    eventTime: iso(ts),
-    eventSource: 'signin.amazonaws.com',
-    eventName: 'ConsoleLogin',
-    awsRegion: 'ap-southeast-1',
-    sourceIPAddress: ip,
-    userAgent: 'Mozilla/5.0',
-    userIdentity: {
-      type: 'IAMUser',
-      principalId: 'AIDAEXAMPLEID',
-      arn: `arn:aws:iam::123456789012:user/${user}`,
-      accountId: '123456789012',
-      userName: user,
-    },
-    responseElements: { ConsoleLogin: ok ? 'Success' : 'Failure' },
-    additionalEventData: { MFAUsed: ok ? 'Yes' : 'No' },
-    ...(ok ? {} : { errorMessage: 'Failed authentication' }),
   });
 }
 
@@ -178,10 +131,7 @@ type Generator = (ts: Date, user: string, ip: string, ok: boolean, spec: TenantS
 
 const GENERATORS: Record<SourceType, Generator> = {
   fortigate: (ts, u, ip, ok, s) => fortigateLine(ts, u, ip, ok, `FG-${s.slug.toUpperCase()}`),
-  windows_ad: (ts, u, ip, ok, s) =>
-    windowsAdJson(ts, u, ip, ok, pickFrom(s.hosts), s.domain),
   m365: (ts, u, ip, ok, s) => m365Json(ts, u, ip, ok, s.domain),
-  aws_cloudtrail: (ts, u, ip, ok) => cloudtrailJson(ts, u, ip, ok),
   crowdstrike: (ts, u, ip, ok, s) => crowdstrikeJson(ts, u, ip, ok, s.domain),
   generic: (ts, u, ip, ok, s) => sshdLine(ts, u, ip, ok, pickFrom(s.hosts)),
 };
@@ -326,9 +276,7 @@ async function seedTenant(
 
   const collectors: SeededCollector[] = [
     await ensureCollector(tenantId, 'edge-firewall', 'syslog', 'fortigate', `${spec.subnet}.0/24`),
-    await ensureCollector(tenantId, 'domain-controllers', 'http', 'windows_ad', null),
     await ensureCollector(tenantId, 'microsoft-365', 'http', 'm365', null),
-    await ensureCollector(tenantId, 'aws-cloudtrail', 'file', 'aws_cloudtrail', null),
     await ensureCollector(tenantId, 'crowdstrike-falcon', 'file', 'crowdstrike', null),
     await ensureCollector(tenantId, 'linux-servers', 'syslog', 'generic', `${serverSubnet}.0/24`),
   ];
@@ -370,7 +318,7 @@ async function seedTenant(
 
   const attacker = '203.0.113.66';
   const burstEnd = now.getTime() - 30 * 1000;
-  const target = collectors.find((c) => c.sourceType === 'windows_ad') ?? collectors[0]!;
+  const target = collectors.find((c) => c.sourceType === 'generic') ?? collectors[0]!;
   const guesses = ['administrator', 'admin', 'root', 'backup', spec.users[0]!];
 
   for (let i = 0; i < 12; i++) {

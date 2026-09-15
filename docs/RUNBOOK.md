@@ -78,7 +78,7 @@ curl -X POST http://localhost:8081/ingest \
   -d '{"CreationTime":"2026-09-12T09:14:22","Operation":"UserLoginFailed","ResultStatus":"Failed","UserId":"jsmith@contoso.com","ClientIP":"203.0.113.44","LogonError":"InvalidUserNameOrPassword"}'
 ```
 
-รับได้ทั้งก้อนเดียว, array, NDJSON และรูปแบบ `{"Records":[...]}` ของ CloudTrail
+รับได้ทั้งก้อนเดียว, array และ NDJSON
 
 ### 2. Syslog
 
@@ -101,7 +101,7 @@ logger -n localhost -P 514 -d "Failed password for invalid user admin from 203.0
 
 ```bash
 curl -X POST http://localhost:8081/api/ingest/file \
-  -b cookies.txt -F collector_id=<uuid> -F file=@cloudtrail.json
+  -b cookies.txt -F collector_id=<uuid> -F file=@samples/m365_audit.json
 ```
 
 รับ `.log` `.json` `.ndjson` `.csv`
@@ -125,7 +125,7 @@ POSTGRES_HOST=localhost POSTGRES_PORT=5433 npm test
 ซึ่งเป็นชื่อที่ใช้ได้เฉพาะในเครือข่ายของ compose เท่านั้น ถ้ารันด้วย `npm test`
 เฉย ๆ จากเครื่อง host จะต่อฐานข้อมูลไม่ได้ แล้วชุดเทสต์ที่สำคัญจะถูก **ข้าม**
 ไปเงียบ ๆ — ขึ้นว่า `skipped` ไม่ใช่ `failed` ให้ดูบรรทัดสรุปทุกครั้งว่าได้
-`105 passed` จริง ไม่ใช่ `93 passed | 12 skipped`
+`93 passed` จริง ไม่ใช่ `81 passed | 12 skipped`
 
 (การข้ามเมื่อไม่มีฐานข้อมูลเป็นพฤติกรรมที่ตั้งใจ จะได้รันเทสต์ตัวแปลงตอนออฟไลน์ได้)
 

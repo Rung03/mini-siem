@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { requireAuth } from '../../auth/rbac.js';
 import { withActor } from '../../db/tenant.js';
 import type { Actor } from '../../db/tenant.js';
-import { SOURCES, SOURCE_TYPES } from '../../normalize/schema.js';
 import { HttpError, handler, parse, resolveRange, tenantScope } from '../util.js';
 
 const query = z.object({
@@ -13,8 +12,8 @@ const query = z.object({
   to: z.string().optional(),
   tenant_id: z.string().uuid().optional(),
   outcome: z.enum(['success', 'failure', 'unknown']).optional(),
-  source_type: z.enum(SOURCE_TYPES).optional(),
-  source: z.enum(SOURCES).optional(),
+  source_type: z.string().max(64).optional(),
+  source: z.string().max(64).optional(),
   event_type: z.string().max(120).optional(),
   action: z.string().max(64).optional(),
   country: z.string().length(2).optional(),

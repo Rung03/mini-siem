@@ -150,27 +150,6 @@
           }
         },
         {
-          "name": "CloudTrail Records envelope (use an aws_cloudtrail collector token)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{collectorToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"Records\":[{\"eventTime\":\"{{$isoTimestamp}}\",\"eventSource\":\"signin.amazonaws.com\",\"eventName\":\"ConsoleLogin\",\"awsRegion\":\"ap-southeast-1\",\"sourceIPAddress\":\"198.51.100.23\",\"userIdentity\":{\"type\":\"IAMUser\",\"userName\":\"admin\",\"accountId\":\"123456789012\"},\"responseElements\":{\"ConsoleLogin\":\"Failure\"}}]}"
-            },
-            "url": "{{baseUrl}}/ingest"
-          }
-        },
-        {
           "name": "Upload a log file",
           "request": {
             "method": "POST",

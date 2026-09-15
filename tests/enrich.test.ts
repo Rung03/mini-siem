@@ -75,7 +75,7 @@ describe('address classification', () => {
   });
 
   it('returns null for something that is not an address', () => {
-    expect(classifyIp('cloudformation.amazonaws.com')).toBeNull();
+    expect(classifyIp('service.example.com')).toBeNull();
     expect(classifyIp(null)).toBeNull();
   });
 });
@@ -164,12 +164,12 @@ describe('reverse DNS', () => {
   });
 
   it('applies the cached hostname to an event', async () => {
-    setResolver(async () => ['dc01.corp.local']);
+    setResolver(async () => ['web-01.corp.local']);
     hostnameFor('10.0.0.9');
     await new Promise((r) => setTimeout(r, 20));
 
     const [event] = enrichBatch([eventFor('10.0.0.9')]);
-    expect(event!.srcHostname).toBe('dc01.corp.local');
+    expect(event!.srcHostname).toBe('web-01.corp.local');
   });
 
   it('caches a failure so it is not retried on every packet', async () => {
